@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ActionType {
+  PROJECT_CREATED
+  MEMBER_INVITED
+  TASK_CREATED
+  TASK_STATUS_CHANGED
+  TASK_DELETED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String?
+  avatarUrl     String?
+  provider      String?
+  providerId    String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  projectMembers ProjectMember[]
+  assignedTasks  Task[]       @relation("AssignedTasks")
+  createdTasks   Task[]       @relation("CreatedTasks")
+  activityLogs   ActivityLog[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     ProjectMember[]
+  tasks       Task[]
+  activityLogs ActivityLog[]
+}
+
+model ProjectMember {
+  id        String @id @default(cuid())
+
+  role      Role   @default(MEMBER)
+
+  userId    String
+  projectId String
+
+  user      User    @relation(fields: [userId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, projectId])
+}
+
+model Task {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+
+  status      TaskStatus    @default(TODO)
+  priority    TaskPriority  @default(MEDIUM)
+
+  projectId   String
+  assignedToId String?
+  createdById String
+
+  project     Project @relation(fields: [projectId], references: [id])
+
+  assignedTo  User?   @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  createdBy   User    @relation("CreatedTasks", fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String     @id @default(cuid())
+
+  action    ActionType
+  message   String?
+
+  userId    String
+  projectId String?
+
+  user      User     @relation(fields: [userId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  createdAt DateTime @default(now())
+}
