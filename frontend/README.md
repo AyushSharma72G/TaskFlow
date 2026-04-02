@@ -3,7 +3,7 @@
 src/
 │
 ├── app/
-│ ├── App.tsx
+|
 │ ├── main.tsx
 │ ├── routes.tsx
 │ ├── store.ts
@@ -118,8 +118,8 @@ src/
 │ │
 │ ├── lib/
 │ │ ├── axios.ts
-│ │ ├── storage.ts
-│ │ └── cn.ts
+│ │
+│ │
 │ │
 │ ├── utils/
 │ │ ├── formatDate.ts
