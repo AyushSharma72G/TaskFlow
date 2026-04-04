@@ -36,6 +36,7 @@ model User {
   name          String
   email         String   @unique
   password      String?
+  refreshTokenHash String?
   avatarUrl     String?
   provider      String?
   providerId    String?
