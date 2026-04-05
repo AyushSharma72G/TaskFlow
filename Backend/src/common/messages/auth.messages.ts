@@ -1,4 +1,4 @@
-export const authMessages = {
+export const AUTH_MESSAGES = {
 	errors: {
 		authenticationRequired: 'Authentication required',
 		invalidTokenPayload: 'Invalid token payload',

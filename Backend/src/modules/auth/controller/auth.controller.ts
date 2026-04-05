@@ -19,7 +19,7 @@ import {
 	RegisterDto,
 	UpdateProfileDto,
 } from '../dto/auth.dto';
-import { authMessages } from '../../../common/messages/auth.messages';
+import { AUTH_MESSAGES } from '../../../common/messages/auth.messages';
 import { AuthService } from '../services/auth.service';
 import config from '../../../config/env.config';
 
@@ -36,7 +36,7 @@ export class AuthController {
 
 		return {
 			success: true,
-			message: authMessages.success.userRegistered,
+			message: AUTH_MESSAGES.success.userRegistered,
 			data: user,
 			accessToken: accessToken,
 			refreshToken: refreshToken,
@@ -51,7 +51,7 @@ export class AuthController {
 		this.setAuthCookies(response, accessToken, refreshToken);
 		return {
 			success: true,
-			message: authMessages.success.loginSuccessful,
+			message: AUTH_MESSAGES.success.loginSuccessful,
 			data: user,
 			accessToken: accessToken,
 			refreshToken: refreshToken,
@@ -78,7 +78,7 @@ export class AuthController {
 		});
 		return {
 			success: true,
-			message: authMessages.success.logoutSuccessful,
+			message: AUTH_MESSAGES.success.logoutSuccessful,
 			data: null,
 		};
 	}
@@ -89,14 +89,14 @@ export class AuthController {
 	) {
 		const refreshToken = request.cookies?.refresh_token as string | undefined;
 		if (!refreshToken) {
-			throw new UnauthorizedException(authMessages.errors.refreshTokenRequired);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.refreshTokenRequired);
 		}
 		const { user, accessToken, refreshToken: newRefreshToken } =
 			await this.authService.refresh(refreshToken);
 		this.setAuthCookies(response, accessToken, newRefreshToken);
 		return {
 			success: true,
-			message: authMessages.success.tokenRefreshed,
+			message: AUTH_MESSAGES.success.tokenRefreshed,
 			data: user,
 		};
 	}
@@ -106,17 +106,7 @@ export class AuthController {
 		const user = await this.authService.getProfile(request.user.id);
 		return {
 			success: true,
-			message: authMessages.success.profileRetrieved,
-			data: user,
-		};
-	}
-	@Get('me')
-	@UseGuards(JwtCookieAuthGuard)
-	async getCurrentUser(@Req() request: AuthRequest) {
-		const user = await this.authService.getCurrentUserDetails(request.user.id);
-		return {
-			success: true,
-			message: authMessages.success.currentUserRetrieved,
+			message: AUTH_MESSAGES.success.profileRetrieved,
 			data: user,
 		};
 	}
@@ -127,12 +117,12 @@ export class AuthController {
 		@Query('projectId') projectId?: string,
 	) {
 		if (!projectId) {
-			throw new BadRequestException(authMessages.errors.projectIdRequired);
+			throw new BadRequestException(AUTH_MESSAGES.errors.projectIdRequired);
 		}
 		const role = await this.authService.getCurrentUserRole(request.user.id, projectId);
 		return {
 			success: true,
-			message: authMessages.success.currentUserRoleRetrieved,
+			message: AUTH_MESSAGES.success.currentUserRoleRetrieved,
 			data: role,
 		};
 	}
@@ -145,7 +135,7 @@ export class AuthController {
 		const user = await this.authService.updateProfile(request.user.id, dto);
 		return {
 			success: true,
-			message: authMessages.success.profileUpdated,
+			message: AUTH_MESSAGES.success.profileUpdated,
 			data: user,
 		};
 	}
@@ -158,7 +148,7 @@ export class AuthController {
 		await this.authService.changePassword(request.user.id, dto);
 		return {
 			success: true,
-			message: authMessages.success.passwordChanged,
+			message: AUTH_MESSAGES.success.passwordChanged,
 			data: null,
 		};
 	}

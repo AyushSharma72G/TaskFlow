@@ -7,7 +7,7 @@ import {
 import { compare, hash } from 'bcrypt';
 import { sign, verify, type SignOptions } from 'jsonwebtoken';
 import config from '../../../config/env.config';
-import { authMessages } from '../../../common/messages/auth.messages';
+import { AUTH_MESSAGES } from '../../../common/messages/auth.messages';
 import {
 	ChangePasswordDto,
 	LoginDto,
@@ -27,7 +27,7 @@ export class AuthService {
 	}> {
 		const existingUser = await this.authRepository.findByEmail(dto.email);
 		if (existingUser) {
-			throw new ConflictException(authMessages.errors.emailAlreadyInUse);
+			throw new ConflictException(AUTH_MESSAGES.errors.emailAlreadyInUse);
 		}
 		const hashedPassword = await hash(dto.password, 10);
 		const user = await this.authRepository.createUser({
@@ -46,15 +46,15 @@ export class AuthService {
 	}> {
 		const user = await this.authRepository.findByEmail(dto.email);
 		if (!user?.password) {
-			throw new UnauthorizedException(authMessages.errors.invalidCredentials);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidCredentials);
 		}
 		const validPassword = await compare(dto.password, user.password);
 		if (!validPassword) {
-			throw new UnauthorizedException(authMessages.errors.invalidCredentials);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidCredentials);
 		}
 		const safeUser = await this.authRepository.findById(user.id);
 		if (!safeUser) {
-			throw new UnauthorizedException(authMessages.errors.userNotFound);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);
 		}
 		const { accessToken, refreshToken } = this.issueTokens(
 			safeUser.id,
@@ -66,13 +66,13 @@ export class AuthService {
 	async getProfile(userId: string): Promise<SafeUser> {
 		const user = await this.authRepository.findById(userId);
 		if (!user) {
-			throw new UnauthorizedException(authMessages.errors.userNotFound);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);
 		}
 		return user;
 	}
 	async updateProfile(userId: string, dto: UpdateProfileDto): Promise<SafeUser> {
 		if (dto.name === undefined && dto.avatarUrl === undefined) {
-			throw new BadRequestException(authMessages.errors.emptyProfileUpdate);
+			throw new BadRequestException(AUTH_MESSAGES.errors.emptyProfileUpdate);
 		}
 		return this.authRepository.updateUser(userId, {
 			name: dto.name,
@@ -82,16 +82,16 @@ export class AuthService {
 	async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
 		if (dto.oldPassword === dto.newPassword) {
 			throw new BadRequestException(
-				authMessages.errors.newPasswordMustDifferFromOld,
+				AUTH_MESSAGES.errors.newPasswordMustDifferFromOld,
 			);
 		}
 		const user = await this.authRepository.findByIdWithPassword(userId);
 		if (!user?.password) {
-			throw new UnauthorizedException(authMessages.errors.userNotFound);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);
 		}
 		const validOldPassword = await compare(dto.oldPassword, user.password);
 		if (!validOldPassword) {
-			throw new UnauthorizedException(authMessages.errors.oldPasswordIncorrect);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.oldPasswordIncorrect);
 		}
 		const newHashedPassword = await hash(dto.newPassword, 10);
 		await this.authRepository.updatePassword(userId, newHashedPassword);
@@ -104,15 +104,15 @@ export class AuthService {
 		const payload = this.verifyRefreshToken(refreshToken);
 		const userAuth = await this.authRepository.findByIdWithAuthSecrets(payload.sub);
 		if (!userAuth?.refreshTokenHash) {
-			throw new UnauthorizedException(authMessages.errors.invalidRefreshToken);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidRefreshToken);
 		}
 		const validRefreshToken = await compare(refreshToken, userAuth.refreshTokenHash);
 		if (!validRefreshToken) {
-			throw new UnauthorizedException(authMessages.errors.invalidRefreshToken);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidRefreshToken);
 		}
 		const safeUser = await this.authRepository.findById(userAuth.id);
 		if (!safeUser) {
-			throw new UnauthorizedException(authMessages.errors.userNotFound);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);
 		}
 		const tokens = this.issueTokens(safeUser.id, safeUser.email);
 		await this.setRefreshToken(safeUser.id, tokens.refreshToken);
@@ -174,11 +174,11 @@ export class AuthService {
 				email?: string;
 			};
 			if (!payload.sub || !payload.email) {
-				throw new UnauthorizedException(authMessages.errors.invalidRefreshToken);
+				throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidRefreshToken);
 			}
 			return { sub: payload.sub, email: payload.email };
 		} catch {
-			throw new UnauthorizedException(authMessages.errors.invalidRefreshToken);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidRefreshToken);
 		}
 	}
 	private async setRefreshToken(userId: string, refreshToken: string): Promise<void> {

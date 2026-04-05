@@ -7,7 +7,7 @@ import {
 import type { Request } from 'express';
 import { verify } from 'jsonwebtoken';
 import config from '../../config/env.config';
-import { authMessages } from '../messages/auth.messages';
+import { AUTH_MESSAGES } from '../messages/auth.messages';
 
 type JwtPayload = {
 	sub: string;
@@ -28,7 +28,7 @@ export class JwtCookieAuthGuard implements CanActivate {
 		const token = request.cookies?.access_token as string | undefined;
 
 		if (!token) {
-			throw new UnauthorizedException(authMessages.errors.authenticationRequired);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.authenticationRequired);
 		}
 		try {
 			const payload = verify(
@@ -36,7 +36,7 @@ export class JwtCookieAuthGuard implements CanActivate {
 				config.JWT_SECRET,
 			) as JwtPayload;
 			if (!payload?.sub || !payload?.email) {
-				throw new UnauthorizedException(authMessages.errors.invalidTokenPayload);
+				throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidTokenPayload);
 			}
 			request.user = {
 				id: payload.sub,
@@ -47,7 +47,7 @@ export class JwtCookieAuthGuard implements CanActivate {
 			if (error instanceof UnauthorizedException) {
 				throw error;
 			}
-			throw new UnauthorizedException(authMessages.errors.invalidOrExpiredToken);
+			throw new UnauthorizedException(AUTH_MESSAGES.errors.invalidOrExpiredToken);
 		}
 	}
 }
