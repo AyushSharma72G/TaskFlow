@@ -32,10 +32,12 @@ async function bootstrap() {
       customSiteTitle: 'TaskFlow API Docs',
     });
   } catch (error) {
-    logger.warn('Skipping Swagger setup: openapi/taskflow.swagger.json missing or invalid JSON');
+    logger.warn(
+      'Skipping Swagger setup: openapi/taskflow.swagger.json missing or invalid JSON',
+    );
     logger.debug(error);
   }
   app.setGlobalPrefix('api');
   await app.listen(config.PORT);
 }
-bootstrap();    
+bootstrap();

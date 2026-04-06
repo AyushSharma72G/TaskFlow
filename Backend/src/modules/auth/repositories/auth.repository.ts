@@ -35,7 +35,9 @@ export class AuthRepository {
       select: safeUserSelect,
     })) as SafeUser | null;
   }
-  async findByIdWithPassword(id: string): Promise<{ id: string; password: string | null } | null> {
+  async findByIdWithPassword(
+    id: string,
+  ): Promise<{ id: string; password: string | null } | null> {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -44,17 +46,12 @@ export class AuthRepository {
       },
     });
   }
-  async findByIdWithAuthSecrets(
-    id: string,
-  ): Promise<
-    | {
-        id: string;
-        email: string;
-        password: string | null;
-        refreshTokenHash: string | null;
-      }
-    | null
-  > {
+  async findByIdWithAuthSecrets(id: string): Promise<{
+    id: string;
+    email: string;
+    password: string | null;
+    refreshTokenHash: string | null;
+  } | null> {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
