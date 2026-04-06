@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+*.log
+.env
+.env.*
+openapi/taskflow.swagger.json
+prisma/migrations
