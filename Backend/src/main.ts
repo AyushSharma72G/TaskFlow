@@ -5,20 +5,20 @@ import { join } from 'node:path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule);
 
-  const openApiDocument = JSON.parse(
-    readFileSync(
-      join(process.cwd(), 'openapi', 'taskflow.swagger.json'),
-      'utf-8',
-    ),
-  );
+    const openApiDocument = JSON.parse(
+        readFileSync(
+            join(process.cwd(), 'openapi', 'taskflow.swagger.json'),
+            'utf-8',
+        ),
+    );
 
-  SwaggerModule.setup('api-docs', app, openApiDocument, {
-    jsonDocumentUrl: 'api-docs/json',
-    customSiteTitle: 'TaskFlow API Docs',
-  });
+    SwaggerModule.setup('api-docs', app, openApiDocument, {
+        jsonDocumentUrl: 'api-docs/json',
+        customSiteTitle: 'TaskFlow API Docs',
+    });
 
-  await app.listen(3000);
+    await app.listen(3000);
 }
-bootstrap();    
+bootstrap();
