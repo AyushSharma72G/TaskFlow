@@ -35,10 +35,11 @@ model User {
   id            String   @id @default(cuid())
   name          String
   email         String   @unique
-  password      String
-  avatarUrl     String
-  provider      String
-  providerId    String
+  password      String?
+  refreshTokenHash String?
+  avatarUrl     String?
+  provider      String?
+  providerId    String?
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

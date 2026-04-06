@@ -36,7 +36,7 @@
           "Auth"
         ],
         "summary": "Register a new user",
-        "description": "Registers a user with name, email, and password.",
+        "description": "Registers a user and sets access_token and refresh_token httpOnly cookies.",
         "requestBody": {
           "required": true,
           "content": {
@@ -50,6 +50,14 @@
         "responses": {
           "201": {
             "description": "User registered",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Sets access_token and refresh_token cookies"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -73,7 +81,7 @@
           "Auth"
         ],
         "summary": "Login with email and password",
-        "description": "Authenticates user and sets a JWT httpOnly cookie.",
+        "description": "Authenticates user and sets access_token and refresh_token httpOnly cookies.",
         "requestBody": {
           "required": true,
           "content": {
@@ -92,7 +100,7 @@
                 "schema": {
                   "type": "string"
                 },
-                "description": "JWT httpOnly cookie"
+                "description": "Sets access_token and refresh_token cookies"
               }
             },
             "content": {
@@ -112,28 +120,24 @@
         }
       }
     },
-    "/auth/google": {
-      "get": {
+    "/auth/refresh": {
+      "post": {
         "tags": [
           "Auth"
         ],
-        "summary": "Initiate Google OAuth",
-        "responses": {
-          "302": {
-            "description": "Redirect to Google OAuth"
-          }
-        }
-      }
-    },
-    "/auth/google/callback": {
-      "get": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Google OAuth callback",
+        "summary": "Refresh tokens",
+        "description": "Uses refresh_token cookie to rotate and issue new access_token and refresh_token cookies.",
         "responses": {
           "200": {
-            "description": "OAuth login completed",
+            "description": "Tokens refreshed",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Sets rotated access_token and refresh_token cookies"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -142,8 +146,8 @@
               }
             }
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
@@ -162,6 +166,14 @@
         "responses": {
           "200": {
             "description": "Logout successful",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Clears access_token and refresh_token cookies"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -230,6 +242,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/auth/me/role": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get current user role in a project",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Project ID to resolve current user role"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user role retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserRoleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Change current user password",
+        "description": "Requires the current password to be provided.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -1412,6 +1508,23 @@
           }
         }
       },
+      "ChangePasswordDto": {
+        "type": "object",
+        "required": [
+          "oldPassword",
+          "newPassword"
+        ],
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "minLength": 8
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8
+          }
+        }
+      },
       "CreateProjectDto": {
         "type": "object",
         "required": [
@@ -1566,6 +1679,41 @@
             "properties": {
               "data": {
                 "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        ]
+      },
+      "CurrentUserRoleData": {
+        "type": "object",
+        "required": [
+          "projectId"
+        ],
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "OWNER",
+              "MEMBER",
+              null
+            ]
+          }
+        }
+      },
+      "CurrentUserRoleResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SuccessResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/CurrentUserRoleData"
               }
             }
           }
