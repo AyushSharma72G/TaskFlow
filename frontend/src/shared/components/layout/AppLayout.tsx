@@ -7,7 +7,7 @@ export const AppLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-[100dvh] flex bg-bg">
+    <div className="flex  flex-col h-[100dvh] sm:flex-row bg-bg">
       {/* Desktop: sidebar stays fixed; does not scroll with main */}
       <Sidebar className="fixed inset-y-0 left-0 z-30 hidden h-full w-64 overflow-y-auto md:flex" />
 
@@ -21,7 +21,11 @@ export const AppLayout = () => {
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-1.5">
-          <img src="/taskflow-logo.png" alt="TaskFlow logo" className="h-7 w-7 object-contain" />
+          <img
+            src="/taskflow-logo.png"
+            alt="TaskFlow logo"
+            className="h-7 w-7 object-contain"
+          />
           <p className="text-base leading-none font-semibold tracking-tight text-text-primary">
             TaskFlow
           </p>
@@ -49,7 +53,7 @@ export const AppLayout = () => {
       </div>
 
       {/* Main column: offset for sidebar on desktop; only this region scrolls */}
-      <div className="flex min-h-0 flex-1 flex-col md:pl-64">
+      <div className="flex min-h-0 flex-1 flex-col ">
         <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-8">
           <Outlet />
         </main>

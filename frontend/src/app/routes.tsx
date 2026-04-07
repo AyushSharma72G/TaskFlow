@@ -5,8 +5,9 @@ import {
   DashboardPage,
   ProfilePage,
   ProjectsPage,
-  TasksPage,
+  // TasksPage,
 } from "./placeholderPages";
+import TasksPage from "../features/tasks/pages/TasksPage";
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +23,7 @@ export const router = createBrowserRouter([
         element: <ProjectsPage />,
       },
       {
-        path: "tasks",
+        path: "project/:id",
         element: <TasksPage />,
       },
       {
@@ -31,6 +32,10 @@ export const router = createBrowserRouter([
       },
       {
         path: "profile",
+        element: <ProfilePage />,
+      },
+      {
+        path: "",
         element: <ProfilePage />,
       },
     ],
