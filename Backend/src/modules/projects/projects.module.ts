@@ -3,9 +3,10 @@ import { JwtCookieAuthGuard } from '../../common/guards';
 import { ProjectsController } from './controller/projects.controller';
 import { ProjectsRepository } from './repositories/projects.repository';
 import { ProjectsService } from './services/projects.service';
+import { ActivityLogModule } from '../activity_log/activity-log.module';
 
 @Module({
-
+  imports: [ActivityLogModule],
   controllers: [ProjectsController],
   providers: [ProjectsService, ProjectsRepository, JwtCookieAuthGuard],
 })

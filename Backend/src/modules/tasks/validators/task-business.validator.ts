@@ -115,6 +115,8 @@ export class TaskBusinessValidator {
         projectId: string;
         assignedToId: string | null;
         createdById: string;
+        status: string;
+        title: string;
     }> {
         const { taskId, userId } = params;
 
@@ -125,6 +127,8 @@ export class TaskBusinessValidator {
                 projectId: true,
                 assignedToId: true,
                 createdById: true,
+                title: true,
+                status: true,
             },
         });
 
