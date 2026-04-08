@@ -5,7 +5,7 @@ import { AuthRepository } from './repositories/auth.repository';
 import { AuthService } from './services/auth.service';
 
 @Module({
-  controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtCookieAuthGuard],
+    controllers: [AuthController],
+    providers: [AuthService, AuthRepository, JwtCookieAuthGuard],
 })
 export class AuthModule {}

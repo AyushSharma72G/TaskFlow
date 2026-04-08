@@ -32,14 +32,14 @@ enum ActionType {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  password      String?
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  password         String?
   refreshTokenHash String?
-  avatarUrl     String?
-  provider      String?
-  providerId    String?
+  avatarUrl        String?
+  provider         String?
+  providerId       String?
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -54,7 +54,7 @@ model User {
 model Project {
   id          String   @id @default(cuid())
   title       String
-  description String
+  description String?
   dueDate     DateTime
   ownerId     String
 
@@ -77,10 +77,10 @@ model ProjectMember {
   userId    String
   projectId String
 
-  user      User    @relation(fields: [userId], references: [id])
-  project   Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  joinedAt  DateTime @default(now())
+  joinedAt DateTime @default(now())
 
   @@unique([userId, projectId])
   @@index([userId])
@@ -90,23 +90,21 @@ model ProjectMember {
 model Task {
   id          String        @id @default(cuid())
   title       String
-  description String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
 
-  status      TaskStatus    @default(TODO)
-  priority    TaskPriority  @default(MEDIUM)
+  projectId    String
+  assignedToId String?
+  createdById  String
 
-  projectId   String
-  assignedToId String
-  createdById String
-  dueDate      DateTime
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo User?   @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  createdBy  User    @relation("CreatedTasks", fields: [createdById], references: [id])
 
-  project     Project @relation(fields: [projectId], references: [id])
-
-  assignedTo  User    @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  createdBy   User    @relation("CreatedTasks", fields: [createdById], references: [id])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
   @@index([assignedToId])
@@ -114,21 +112,19 @@ model Task {
 }
 
 model ActivityLog {
-  id        String     @id @default(cuid())
-
-  action    String
-  details   Json
-  oldValue  String?
-  newValue  String?
+  id     String     @id @default(cuid())
+  action ActionType
+  details Json
 
   userId    String
   projectId String
 
-  user      User     @relation(fields: [userId], references: [id])
-  project   Project  @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([projectId])
+  @@index([taskId])
 }

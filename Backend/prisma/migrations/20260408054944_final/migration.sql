@@ -16,6 +16,7 @@ CREATE TABLE "User" (
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT,
+    "refreshTokenHash" TEXT,
     "avatarUrl" TEXT,
     "provider" TEXT,
     "providerId" TEXT,
@@ -28,8 +29,10 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Project" (
     "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
     "description" TEXT,
+    "dueDate" TIMESTAMP(3) NOT NULL,
+    "ownerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -42,7 +45,7 @@ CREATE TABLE "ProjectMember" (
     "role" "Role" NOT NULL DEFAULT 'MEMBER',
     "userId" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ProjectMember_pkey" PRIMARY KEY ("id")
 );
@@ -54,6 +57,7 @@ CREATE TABLE "Task" (
     "description" TEXT,
     "status" "TaskStatus" NOT NULL DEFAULT 'TODO',
     "priority" "TaskPriority" NOT NULL DEFAULT 'MEDIUM',
+    "dueDate" TIMESTAMP(3),
     "projectId" TEXT NOT NULL,
     "assignedToId" TEXT,
     "createdById" TEXT NOT NULL,
@@ -67,9 +71,10 @@ CREATE TABLE "Task" (
 CREATE TABLE "ActivityLog" (
     "id" TEXT NOT NULL,
     "action" "ActionType" NOT NULL,
-    "message" TEXT,
+    "details" JSONB NOT NULL,
     "userId" TEXT NOT NULL,
-    "projectId" TEXT,
+    "projectId" TEXT NOT NULL,
+    "taskId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ActivityLog_pkey" PRIMARY KEY ("id")
@@ -79,16 +84,46 @@ CREATE TABLE "ActivityLog" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE INDEX "Project_ownerId_idx" ON "Project"("ownerId");
+
+-- CreateIndex
+CREATE INDEX "ProjectMember_userId_idx" ON "ProjectMember"("userId");
+
+-- CreateIndex
+CREATE INDEX "ProjectMember_projectId_idx" ON "ProjectMember"("projectId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ProjectMember_userId_projectId_key" ON "ProjectMember"("userId", "projectId");
+
+-- CreateIndex
+CREATE INDEX "Task_projectId_idx" ON "Task"("projectId");
+
+-- CreateIndex
+CREATE INDEX "Task_assignedToId_idx" ON "Task"("assignedToId");
+
+-- CreateIndex
+CREATE INDEX "Task_createdById_idx" ON "Task"("createdById");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_userId_idx" ON "ActivityLog"("userId");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_projectId_idx" ON "ActivityLog"("projectId");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_taskId_idx" ON "ActivityLog"("taskId");
+
+-- AddForeignKey
+ALTER TABLE "Project" ADD CONSTRAINT "Project_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Task" ADD CONSTRAINT "Task_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Task" ADD CONSTRAINT "Task_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -100,4 +135,4 @@ ALTER TABLE "Task" ADD CONSTRAINT "Task_createdById_fkey" FOREIGN KEY ("createdB
 ALTER TABLE "ActivityLog" ADD CONSTRAINT "ActivityLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ActivityLog" ADD CONSTRAINT "ActivityLog_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ActivityLog" ADD CONSTRAINT "ActivityLog_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;

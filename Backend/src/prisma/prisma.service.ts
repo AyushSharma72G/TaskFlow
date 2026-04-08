@@ -4,20 +4,20 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import config from 'src/config/env.config';
 @Injectable()
 export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
+    extends PrismaClient
+    implements OnModuleInit, OnModuleDestroy
 {
-  constructor() {
-    const connectionString = config.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('DATABASE_URL is not set');
+    constructor() {
+        const connectionString = config.DATABASE_URL;
+        if (!connectionString) {
+            throw new Error('DATABASE_URL is not set');
+        }
+        super({ adapter: new PrismaPg(connectionString) });
     }
-    super({ adapter: new PrismaPg(connectionString) });
-  }
-  async onModuleInit(): Promise<void> {
-    await this.$connect();
-  }
-  async onModuleDestroy(): Promise<void> {
-    await this.$disconnect();
-  }
+    async onModuleInit(): Promise<void> {
+        await this.$connect();
+    }
+    async onModuleDestroy(): Promise<void> {
+        await this.$disconnect();
+    }
 }
