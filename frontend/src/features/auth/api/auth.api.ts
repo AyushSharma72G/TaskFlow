@@ -1,0 +1,51 @@
+import { api } from "../../../shared/lib/axios";
+import type {
+  AuthApiResponse,
+  AuthUser,
+  ChangePasswordPayload,
+  LoginPayload,
+  ProjectRoleData,
+  RegisterPayload,
+  UpdateProfilePayload,
+} from "../types";
+
+export const authApi = {
+  async login(payload: LoginPayload): Promise<AuthUser> {
+    const response = await api.post<AuthApiResponse<AuthUser>>("/auth/login", payload);
+    return response.data.data;
+  },
+
+  async register(payload: RegisterPayload): Promise<AuthUser> {
+    const response = await api.post<AuthApiResponse<AuthUser>>("/auth/register", payload);
+    return response.data.data;
+  },
+
+  async logout(): Promise<void> {
+    await api.post("/auth/logout");
+  },
+
+  async refresh(): Promise<void> {
+    await api.post("/auth/refresh");
+  },
+
+  async getProfile(): Promise<AuthUser> {
+    const response = await api.get<AuthApiResponse<AuthUser>>("/auth/profile");
+    return response.data.data;
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+    const response = await api.patch<AuthApiResponse<AuthUser>>("/auth/profile", payload);
+    return response.data.data;
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+    await api.patch("/auth/change-password", payload);
+  },
+
+  async getCurrentUserRole(projectId: string): Promise<ProjectRoleData> {
+    const response = await api.get<AuthApiResponse<ProjectRoleData>>("/auth/me/role", {
+      params: { projectId },
+    });
+    return response.data.data;
+  },
+};

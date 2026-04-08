@@ -10,6 +10,10 @@ import config from './config/env.config';
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
     const app = await NestFactory.create(AppModule);
+    app.enableCors({
+        origin: config.FRONTEND_URL,
+        credentials: true,
+    });
     app.use(cookieParser());
     app.useGlobalPipes(
         new ValidationPipe({
