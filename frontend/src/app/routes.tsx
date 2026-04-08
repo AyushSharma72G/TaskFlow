@@ -3,6 +3,7 @@ import { AppLayout } from "../shared/components/layout/AppLayout";
 import {
   ActivityPage,
   DashboardPage,
+  HomePage,
   ProfilePage,
   ProjectsPage,
   // TasksPage,
@@ -16,6 +17,10 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <HomePage />,
+      },
+      {
+        path: "dashboard",
         element: <DashboardPage />,
       },
       {
