@@ -534,105 +534,128 @@
         }
       }
     },
-    "/projects/{id}/invite": {
-      "post": {
-        "tags": [
-          "Projects"
-        ],
-        "summary": "Invite user to project by email",
-        "description": "Owner only",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectId"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/InviteMemberDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Invitation processed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectMemberResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
+    "/projects/{projectId}/members": {
+  "post": {
+    "tags": ["Projects"],
+    "summary": "Invite user to project by email",
+    "description": "Owner only",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      { "$ref": "#/components/parameters/ProjectIdScoped" }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/InviteMemberDto"
           }
         }
       }
     },
-    "/projects/{id}/members/{userId}": {
-      "delete": {
-        "tags": [
-          "Projects"
-        ],
-        "summary": "Remove member from project",
-        "description": "Owner only",
-        "security": [
-          {
-            "cookieAuth": []
+    "responses": {
+      "200": {
+        "description": "Member added",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProjectMemberResponse"
+            }
           }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProjectId"
-          },
-          {
-            "$ref": "#/components/parameters/UserId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Member removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
-                }
+        }
+      },
+      "400": { "$ref": "#/components/responses/BadRequest" },
+      "401": { "$ref": "#/components/responses/Unauthorized" },
+      "403": { "$ref": "#/components/responses/Forbidden" },
+      "404": { "$ref": "#/components/responses/NotFound" }
+    }
+  },
+
+  "get": {
+    "tags": ["Projects"],
+    "summary": "Get project members",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      { "$ref": "#/components/parameters/ProjectIdScoped" }
+    ],
+    "responses": {
+      "200": {
+        "description": "Members retrieved",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ProjectMember"
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  }
+},"/projects/{projectId}/members/{userId}": {
+  "patch": {
+    "tags": ["Projects"],
+    "summary": "Update member role",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      { "$ref": "#/components/parameters/ProjectIdScoped" },
+      { "$ref": "#/components/parameters/UserId" }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "$ref": "#/components/schemas/Role"
+              }
+            },
+            "required": ["role"]
           }
         }
       }
     },
+    "responses": {
+      "200": {
+        "description": "Role updated",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProjectMemberResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "delete": {
+    "tags": ["Projects"],
+    "summary": "Remove member from project",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      { "$ref": "#/components/parameters/ProjectIdScoped" },
+      { "$ref": "#/components/parameters/UserId" }
+    ],
+    "responses": {
+      "200": {
+        "description": "Member removed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SuccessResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+   
     "/projects/{projectId}/tasks": {
       "get": {
         "tags": [
