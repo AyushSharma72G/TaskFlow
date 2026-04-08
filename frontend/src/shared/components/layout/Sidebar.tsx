@@ -9,6 +9,10 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../../store/hooks";
+import { selectAuthUser } from "../../../features/auth/store/authSelectors";
+import { logoutThunk } from "../../../features/auth/store/authThunks";
 
 type NavItem = {
   label: string;
@@ -39,6 +43,21 @@ export const Sidebar = ({
   onToggleCollapsed,
 }: SidebarProps) => {
   const isCollapsed = collapsed ?? false;
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
+
+  const profileName = user?.name || "Your Profile";
+  const profileEmail = user?.email || "Manage account settings";
+  const profileAvatar =
+    user?.avatarUrl ||
+    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+
+  const handleLogout = async () => {
+    await dispatch(logoutThunk());
+    onNavigate?.();
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <aside
@@ -108,6 +127,7 @@ export const Sidebar = ({
             to={item.to}
             end={item.to === "/"}
             onClick={onNavigate}
+            title={isCollapsed ? item.label : undefined}
             className={({ isActive }) =>
               `flex items-center gap-2 rounded-md transition ${
                 isCollapsed ? "justify-center px-0 py-2" : "px-3 py-2"
@@ -134,17 +154,17 @@ export const Sidebar = ({
         }`}
       >
         <img
-          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"
+          src={profileAvatar}
           alt="Profile"
           className={isCollapsed ? "h-10 w-10 rounded-full object-cover" : "h-10 w-10 rounded-full object-cover"}
         />
         {!isCollapsed ? (
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-text-primary">
-              Your Profile
+              {profileName}
             </p>
             <p className="truncate text-xs text-text-secondary">
-              Manage account settings
+              {profileEmail}
             </p>
           </div>
         ) : null}
@@ -152,6 +172,8 @@ export const Sidebar = ({
 
       <button
         type="button"
+        onClick={handleLogout}
+        title={isCollapsed ? "Logout" : undefined}
         className={`mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-danger/25 bg-danger/10 text-sm font-semibold text-danger shadow-sm transition hover:bg-danger/15 focus:outline-none focus:ring-2 focus:ring-danger/30 focus:ring-offset-2 ${
           isCollapsed ? "px-2 py-2" : "px-3 py-2.5"
         }`}

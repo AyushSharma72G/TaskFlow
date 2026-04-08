@@ -126,5 +126,4 @@ model ActivityLog {
 
   @@index([userId])
   @@index([projectId])
-  @@index([taskId])
 }
