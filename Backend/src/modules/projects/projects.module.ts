@@ -5,9 +5,7 @@ import { ProjectsRepository } from './repositories/projects.repository';
 import { ProjectsService } from './services/projects.service';
 
 @Module({
-
-  controllers: [ProjectsController],
-  providers: [ProjectsService, ProjectsRepository, JwtCookieAuthGuard],
+    controllers: [ProjectsController],
+    providers: [ProjectsService, ProjectsRepository, JwtCookieAuthGuard],
 })
-export class ProjectsModule { }
-
+export class ProjectsModule {}

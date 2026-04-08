@@ -7,8 +7,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ProjectsModule ,TasksModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [PrismaModule, AuthModule, ProjectsModule, TasksModule],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}
