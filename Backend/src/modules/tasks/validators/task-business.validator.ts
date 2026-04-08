@@ -113,7 +113,7 @@ export class TaskBusinessValidator {
     }): Promise<{
         id: string;
         projectId: string;
-        assignedToId: string;
+        assignedToId: string | null;
         createdById: string;
     }> {
         const { taskId, userId } = params;

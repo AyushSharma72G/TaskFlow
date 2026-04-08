@@ -49,11 +49,11 @@ export type ProjectMemberDetails = {
 export type ProjectTaskDetails = {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   status: TaskStatus;
   priority: import('@prisma/client').TaskPriority;
-  dueDate: Date;
-  assignedToId: string;
+  dueDate: Date | null;
+  assignedToId: string | null;
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
@@ -62,7 +62,7 @@ export type ProjectTaskDetails = {
     name: string;
     email: string;
     avatarUrl: string | null;
-  };
+  } | null;
   createdBy: {
     id: string;
     name: string;
@@ -143,7 +143,7 @@ export class ProjectsRepository {
     return projects.map((p) => ({
       id: p.id,
       title: p.title,
-      description: p.description,
+      description: p.description ?? '',
       dueDate: p.dueDate,
       createdAt: p.createdAt,
       memberCount: p._count.members,
@@ -197,7 +197,7 @@ export class ProjectsRepository {
     return {
       id: project.id,
       title: project.title,
-      description: project.description,
+      description: project.description ?? '',
       dueDate: project.dueDate,
       progress: 0,
       memberCount: 1,
@@ -231,7 +231,7 @@ export class ProjectsRepository {
       dueDate?: Date;
     };
   }): Promise<ProjectUpdateResponse> {
-    return this.prisma.project.update({
+    const project = await this.prisma.project.update({
       where: { id: params.projectId },
       data: params.data,
       select: {
@@ -242,6 +242,11 @@ export class ProjectsRepository {
         createdAt: true,
       },
     });
+
+    return {
+      ...project,
+      description: project.description ?? '',
+    };
   }
 
   async deleteProjectById(projectId: string): Promise<void> {
@@ -271,7 +276,7 @@ export class ProjectsRepository {
       tasks: ProjectTaskDetails[];
     };
   } | null> {
-    return this.prisma.projectMember.findUnique({
+    const membership = await this.prisma.projectMember.findUnique({
       where: {
         userId_projectId: { userId, projectId },
       },
@@ -343,6 +348,17 @@ export class ProjectsRepository {
         },
       },
     });
+
+    if (!membership?.project) {
+      return null;
+    }
+
+    return {
+      project: {
+        ...membership.project,
+        description: membership.project.description ?? '',
+      },
+    };
   }
 }
 
