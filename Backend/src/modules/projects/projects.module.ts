@@ -3,12 +3,17 @@ import { JwtCookieAuthGuard } from '../../common/guards';
 import { ProjectsController } from './controller/projects.controller';
 import { ProjectsRepository } from './repositories/projects.repository';
 import { ProjectsService } from './services/projects.service';
+import { ProjectMembersController } from './members/controller/project-members.controller';
+import { ProjectMembersService } from './members/services/project-members.service';
 import { ActivityLogModule } from '../activity_log/activity-log.module';
-
 @Module({
-  imports: [ActivityLogModule],
-  controllers: [ProjectsController],
-  providers: [ProjectsService, ProjectsRepository, JwtCookieAuthGuard],
+    imports: [ActivityLogModule],
+    controllers: [ProjectsController, ProjectMembersController],
+    providers: [
+        ProjectsService,
+        ProjectsRepository,
+        ProjectMembersService,
+        JwtCookieAuthGuard,
+    ],
 })
-export class ProjectsModule { }
-
+export class ProjectsModule {}
