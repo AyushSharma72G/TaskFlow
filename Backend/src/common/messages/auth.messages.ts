@@ -13,6 +13,13 @@ export const AUTH_MESSAGES = {
         newPasswordMustDifferFromOld:
             'New password must be different from old password',
         oldPasswordIncorrect: 'Old password is incorrect',
+        passwordPolicyNotMet:
+            'Password must include uppercase, lowercase, number, and special character',
+        oauthStateMissing: 'OAuth state cookie is missing',
+        invalidOAuthState: 'Invalid OAuth state',
+        invalidOAuthProviderData: 'Invalid OAuth provider data',
+        oauthEmailRequired:
+            'OAuth provider did not return an email. Please make your email accessible and try again',
     },
     success: {
         userRegistered: 'User registered successfully',

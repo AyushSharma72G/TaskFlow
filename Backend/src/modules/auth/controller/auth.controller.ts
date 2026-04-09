@@ -3,6 +3,7 @@ import {
     Body,
     Controller,
     Get,
+    Param,
     Patch,
     Post,
     Query,
@@ -11,6 +12,7 @@ import {
     Res,
     UseGuards,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { JwtCookieAuthGuard, type AuthRequest } from '../../../common/guards';
 import {
@@ -22,10 +24,15 @@ import {
 import { AUTH_MESSAGES } from '../../../common/messages/auth.messages';
 import { AuthService } from '../services/auth.service';
 import config from '../../../config/env.config';
+import { ProviderGuard } from '../guards/provider.guard';
+import { AuthBusinessValidator } from '../validators/auth-business.validator';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly authService: AuthService,
+        private readonly authBusinessValidator: AuthBusinessValidator,
+    ) {}
     @Post('register')
     async register(
         @Body() dto: RegisterDto,
@@ -166,6 +173,59 @@ export class AuthController {
             data: null,
         };
     }
+
+    @Get(':provider')
+    @UseGuards(ProviderGuard)
+    async oauthStart(
+        @Param('provider') provider: string,
+        @Res() response: Response,
+    ) {
+        const oauthState = randomBytes(32).toString('hex');
+        response.cookie('oauth_state', oauthState, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: config.NODE_ENV === 'production',
+            path: '/',
+            maxAge: 10 * 60 * 1000,
+        });
+
+        const redirectUrl = this.authService.initiateOAuth(provider, oauthState);
+        return response.redirect(redirectUrl);
+    }
+
+    @Get(':provider/callback')
+    @UseGuards(ProviderGuard)
+    async oauthCallback(
+        @Param('provider') provider: string,
+        @Req() request: Request,
+        @Res() response: Response,
+    ) {
+        const stateQueryParam = request.query.state;
+        const stateFromProvider =
+            typeof stateQueryParam === 'string' ? stateQueryParam : undefined;
+        const stateFromCookie = request.cookies?.oauth_state as
+            | string
+            | undefined;
+
+        this.authBusinessValidator.validateOAuthState({
+            stateFromProvider,
+            stateFromCookie,
+        });
+
+        const result = await this.authService.handleOAuthCallback(
+            provider,
+            request,
+        );
+        response.clearCookie('oauth_state', {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: config.NODE_ENV === 'production',
+            path: '/',
+        });
+        this.setAuthCookies(response, result.accessToken, result.refreshToken);
+        return response.redirect(config.FRONTEND_URL);
+    }
+
     private setAuthCookies(
         response: Response,
         accessToken: string,

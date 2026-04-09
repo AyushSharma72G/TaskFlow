@@ -4,6 +4,7 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { compare, hash } from 'bcrypt';
 import { sign, verify, type SignOptions } from 'jsonwebtoken';
 import config from '../../../config/env.config';
@@ -15,10 +16,85 @@ import {
     UpdateProfileDto,
 } from '../dto/auth.dto';
 import { AuthRepository, type SafeUser } from '../repositories/auth.repository';
+import { OAuthProviderRegistry } from '../oauth-provider.registry';
+import type { NormalisedUser } from '../interfaces/oauth-provider.interface';
+import { AuthBusinessValidator } from '../validators/auth-business.validator';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly authRepository: AuthRepository) {}
+    constructor(
+        private readonly authRepository: AuthRepository,
+        private readonly providerRegistry: OAuthProviderRegistry,
+        private readonly authBusinessValidator: AuthBusinessValidator,
+    ) {}
+
+    initiateOAuth(providerName: string, state?: string): string {
+        const provider = this.providerRegistry.get(providerName);
+        return provider.getAuthUrl(state);
+    }
+
+    async handleOAuthCallback(
+        providerName: string,
+        req: Request,
+    ): Promise<{
+        user: SafeUser;
+        accessToken: string;
+        refreshToken: string;
+    }> {
+        const provider = this.providerRegistry.get(providerName);
+        const callbackResult = await provider.validateCallback(req);
+        const normalizedUser = await provider.getUser(callbackResult);
+        this.authBusinessValidator.validateOAuthUser(normalizedUser);
+        const user = await this.findOrCreateUser(normalizedUser);
+        const { accessToken, refreshToken } = this.issueTokens(
+            user.id,
+            user.email,
+        );
+        await this.setRefreshToken(user.id, refreshToken);
+
+        return {
+            user,
+            accessToken,
+            refreshToken,
+        };
+    }
+
+    async findOrCreateUser(user: NormalisedUser): Promise<SafeUser> {
+        const byProvider = await this.authRepository.findByProvider(
+            user.providerName,
+            user.providerId,
+        );
+        if (byProvider) {
+            const safe = await this.authRepository.findById(byProvider.id);
+            if (!safe) {
+                throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);
+            }
+            return safe;
+        }
+
+        const byEmail = await this.authRepository.findByEmail(user.email);
+        if (byEmail) {
+            return this.authRepository.linkOAuthProvider(
+                byEmail.id,
+                user.providerName,
+                user.providerId,
+                user.avatar,
+            );
+        }
+
+        const name = `${user.firstName} ${user.lastName}`.trim();
+        return this.authRepository.createOAuthUser({
+            name,
+            email: user.email,
+            provider: user.providerName,
+            providerId: user.providerId,
+            avatarUrl: user.avatar,
+        });
+    }
+
+    generateJwt(user: SafeUser): string {
+        return this.signAccessToken(user.id, user.email);
+    }
 
     async register(dto: RegisterDto): Promise<{
         user: SafeUser;
@@ -29,6 +105,7 @@ export class AuthService {
         if (existingUser) {
             throw new ConflictException(AUTH_MESSAGES.errors.emailAlreadyInUse);
         }
+        this.authBusinessValidator.validatePasswordStrength(dto.password);
         const hashedPassword = await hash(dto.password, 10);
         const user = await this.authRepository.createUser({
             name: dto.name,
@@ -100,6 +177,7 @@ export class AuthService {
                 AUTH_MESSAGES.errors.newPasswordMustDifferFromOld,
             );
         }
+        this.authBusinessValidator.validatePasswordStrength(dto.newPassword);
         const user = await this.authRepository.findByIdWithPassword(userId);
         if (!user?.password) {
             throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);

@@ -5,6 +5,7 @@ import AuthShell from "../components/AuthShell";
 import AuthTabs from "../components/AuthTabs";
 import LoginForm from "../components/LoginForm";
 import RegisterForm from "../components/RegisterForm";
+import OAuthButton from "../components/OAuthButton";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { clearAuthError } from "../store/authSlice";
 import { selectAuthError, selectAuthStatus } from "../store/authSelectors";
@@ -63,9 +64,35 @@ export default function AuthPage() {
         {error ? <AuthErrorAlert message={error} /> : null}
 
         {activeTab === "login" ? (
-          <LoginForm loading={loading} onSubmit={handleLogin} />
+          <>
+            <div className="space-y-2">
+              <OAuthButton provider="google" mode="login" />
+              <OAuthButton provider="github" mode="login" />
+            </div>
+
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-text-secondary">or use email</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <LoginForm loading={loading} onSubmit={handleLogin} />
+          </>
         ) : (
-          <RegisterForm loading={loading} onSubmit={handleRegister} />
+          <>
+            <div className="space-y-2">
+              <OAuthButton provider="google" mode="register" />
+              <OAuthButton provider="github" mode="register" />
+            </div>
+
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-text-secondary">or use email</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <RegisterForm loading={loading} onSubmit={handleRegister} />
+          </>
         )}
       </div>
     </AuthShell>
