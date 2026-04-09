@@ -66,8 +66,8 @@ export default function AuthPage() {
         {activeTab === "login" ? (
           <>
             <div className="space-y-2">
-              <OAuthButton provider="google" />
-              <OAuthButton provider="github" />
+              <OAuthButton provider="google" mode="login" />
+              <OAuthButton provider="github" mode="login" />
             </div>
 
             <div className="flex items-center gap-3 py-1">
@@ -79,7 +79,20 @@ export default function AuthPage() {
             <LoginForm loading={loading} onSubmit={handleLogin} />
           </>
         ) : (
-          <RegisterForm loading={loading} onSubmit={handleRegister} />
+          <>
+            <div className="space-y-2">
+              <OAuthButton provider="google" mode="register" />
+              <OAuthButton provider="github" mode="register" />
+            </div>
+
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-text-secondary">or use email</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <RegisterForm loading={loading} onSubmit={handleRegister} />
+          </>
         )}
       </div>
     </AuthShell>
