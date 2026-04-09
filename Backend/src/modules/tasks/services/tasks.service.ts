@@ -5,12 +5,15 @@ import { TaskBusinessValidator } from '../validators/task-business.validator';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
 import { TASK_MESSAGES } from '../constants/task-messages.constant';
+import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
+import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
 
 @Injectable()
 export class TasksService {
     constructor(
         private readonly tasksRepository: TasksRepository,
         private readonly taskBusinessValidator: TaskBusinessValidator,
+        private readonly activityLogService: ActivityLogService,
     ) {}
 
     async createTask(createTaskDto: CreateTaskDto, currentUserId: string) {
@@ -29,6 +32,17 @@ export class TasksService {
             assignedToId: createTaskDto.assignedToId,
             createdById: currentUserId,
             dueDate: new Date(createTaskDto.dueDate),
+        });
+
+        //logging task creation
+        this.activityLogService.log({
+            action: ActivityAction.TASK_CREATED,
+            detail: {
+                taskTitle: createdTask.title,
+                assignedToId: createdTask.assignedToId ?? null,
+            },
+            projectId: createdTask.projectId,
+            userId: createdTask.createdById,
         });
 
         return createdTask;
@@ -89,19 +103,47 @@ export class TasksService {
             updateData.dueDate = new Date(updateTaskDto.dueDate);
         }
 
-        return this.tasksRepository.update(taskId, updateData);
+        const updatedTask = await this.tasksRepository.update(
+            taskId,
+            updateData,
+        );
+
+        //logging task update
+        if (
+            updateTaskDto.status !== undefined &&
+            updateTaskDto.status !== task.status
+        ) {
+            this.activityLogService.log({
+                action: ActivityAction.TASK_STATUS_CHANGED,
+                detail: {
+                    taskTitle: task.title,
+                    from: task.status,
+                    to: updateTaskDto.status,
+                },
+                projectId: task.projectId,
+                userId: currentUserId,
+            });
+        }
+
+        return updatedTask;
     }
 
     async deleteTask(taskId: string, currentUserId: string) {
-        await this.taskBusinessValidator.validateTaskAccess({
+        const task = await this.taskBusinessValidator.validateTaskAccess({
             taskId,
             userId: currentUserId,
         });
 
         await this.tasksRepository.delete(taskId);
 
-        return {
-            message: TASK_MESSAGES.TASK_DELETED_SUCCESSFULLY,
-        };
+        //logging task deletion
+        this.activityLogService.log({
+            action: ActivityAction.TASK_DELETED,
+            detail: { taskTitle: task.title },
+            projectId: task.projectId,
+            userId: currentUserId,
+        });
+
+        return { message: TASK_MESSAGES.TASK_DELETED_SUCCESSFULLY };
     }
 }

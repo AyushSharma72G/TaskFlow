@@ -9,10 +9,13 @@ import { ProjectsRepository } from '../../repositories/projects.repository';
 import { InviteMemberDto } from '../dto/invite-member.dto';
 import { UpdateMemberRoleDto } from '../dto/update-member-role.dto';
 import { ProjectMemberWithUser } from '../../repositories/projects.repository';
+import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
+import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
 
 @Injectable()
 export class ProjectMembersService {
-    constructor(private readonly repo: ProjectsRepository) {}
+    constructor(private readonly repo: ProjectsRepository,
+        private readonly activityLogService: ActivityLogService) {}
 
     async invite(
         userId: string,
@@ -35,7 +38,21 @@ export class ProjectMembersService {
 
         if (existing) throw new BadRequestException('Already member');
 
-        return this.repo.addMember(projectId, user.id);
+        const invitedUser = user;
+
+        const member = await this.repo.addMember(projectId, user.id);
+
+        await this.activityLogService.log({
+            action: ActivityAction.MEMBER_INVITED,
+            detail: {
+                invitedEmail: dto.email,
+                invitedUserName: invitedUser.name,
+            },
+            projectId,
+            userId,
+        });
+
+        return member;
     }
 
     async getMembers(
