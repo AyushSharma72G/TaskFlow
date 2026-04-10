@@ -4,6 +4,8 @@ import {
     IsEnum,
     IsOptional,
     IsDateString,
+    IsArray,
+    ArrayNotEmpty,
 } from 'class-validator';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 
@@ -13,8 +15,8 @@ export class CreateTaskDto {
     title: string;
 
     @IsString()
-    @IsNotEmpty()
-    description: string;
+    @IsOptional()
+    description?: string;
 
     @IsEnum(TaskStatus)
     @IsOptional()
@@ -28,10 +30,11 @@ export class CreateTaskDto {
     @IsNotEmpty()
     projectId: string;
 
-    @IsString()
-    @IsNotEmpty()
-    assignedToId: string;
+    @IsArray()
+    @IsString({ each: true })
+    assigneeIds: string[];
 
     @IsDateString()
-    dueDate: string;
+    @IsOptional()
+    dueDate?: string;
 }

@@ -1,9 +1,9 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Task, TaskFilters } from "../types";
+import type { Task, TaskFilters, TaskUser } from "../types";
 import {
   createTask,
   deleteTask,
-  fetchTaskById,
+  fetchMembers,
   fetchTasks,
   generateTaskDescription,
   updateTask,
@@ -11,6 +11,7 @@ import {
 
 interface TasksState {
   tasks: Task[];
+  members: TaskUser[];
   selectedTask: Task | null;
   loading: boolean;
   error: string | null;
@@ -21,6 +22,7 @@ interface TasksState {
 
 const initialState: TasksState = {
   tasks: [],
+  members: [],
   selectedTask: null,
   loading: false,
   error: null,
@@ -29,7 +31,7 @@ const initialState: TasksState = {
   filters: {
     status: "ALL",
     priority: "ALL",
-    search: "",
+    assigneeId: "ALL",
   },
 };
 
@@ -37,25 +39,30 @@ const tasksSlice = createSlice({
   name: "tasks",
   initialState,
   reducers: {
-    setSelectedTask(state, action: PayloadAction<Task | null>) {
-      state.selectedTask = action.payload;
-    },
     setStatusFilter(state, action: PayloadAction<TaskFilters["status"]>) {
       state.filters.status = action.payload;
     },
+
     setPriorityFilter(state, action: PayloadAction<TaskFilters["priority"]>) {
       state.filters.priority = action.payload;
     },
-    setSearchFilter(state, action: PayloadAction<string>) {
-      state.filters.search = action.payload;
+
+    setAssignedToFilter(
+      state,
+      action: PayloadAction<TaskFilters["assigneeId"]>,
+    ) {
+      state.filters.assigneeId = action.payload;
     },
+
     clearGeneratedDescription(state) {
       state.generatedDescription = "";
     },
+
     clearTasksError(state) {
       state.error = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
       // fetchTasks
@@ -63,25 +70,11 @@ const tasksSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchTasks.fulfilled, (state, action) => {
+      .addCase(fetchTasks.fulfilled, (state, action: PayloadAction<Task[]>) => {
         state.loading = false;
         state.tasks = action.payload;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || "Something went wrong";
-      })
-
-      // fetchTaskById
-      .addCase(fetchTaskById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchTaskById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.selectedTask = action.payload;
-      })
-      .addCase(fetchTaskById.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || "Something went wrong";
       })
@@ -91,7 +84,7 @@ const tasksSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(createTask.fulfilled, (state, action) => {
+      .addCase(createTask.fulfilled, (state, action: PayloadAction<Task>) => {
         state.loading = false;
         state.tasks.unshift(action.payload);
       })
@@ -105,7 +98,7 @@ const tasksSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateTask.fulfilled, (state, action) => {
+      .addCase(updateTask.fulfilled, (state, action: PayloadAction<Task>) => {
         state.loading = false;
         state.tasks = state.tasks.map((task) =>
           task.id === action.payload.id ? action.payload : task,
@@ -125,7 +118,7 @@ const tasksSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(deleteTask.fulfilled, (state, action) => {
+      .addCase(deleteTask.fulfilled, (state, action: PayloadAction<string>) => {
         state.loading = false;
         state.tasks = state.tasks.filter((task) => task.id !== action.payload);
 
@@ -143,22 +136,37 @@ const tasksSlice = createSlice({
         state.aiLoading = true;
         state.error = null;
       })
-      .addCase(generateTaskDescription.fulfilled, (state, action) => {
-        state.aiLoading = false;
-        state.generatedDescription = action.payload;
-      })
+      .addCase(
+        generateTaskDescription.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.aiLoading = false;
+          state.generatedDescription = action.payload;
+        },
+      )
       .addCase(generateTaskDescription.rejected, (state, action) => {
         state.aiLoading = false;
         state.error = (action.payload as string) || "Something went wrong";
+      })
+
+      // fetch members
+      .addCase(fetchMembers.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchMembers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.members = action.payload;
+      })
+      .addCase(fetchMembers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed";
       });
   },
 });
 
 export const {
-  setSelectedTask,
   setStatusFilter,
   setPriorityFilter,
-  setSearchFilter,
+  setAssignedToFilter,
   clearGeneratedDescription,
   clearTasksError,
 } = tasksSlice.actions;

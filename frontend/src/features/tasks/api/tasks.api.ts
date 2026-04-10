@@ -1,9 +1,15 @@
+// tasks.api.ts
 import { api } from "../../../shared/lib/axios";
-import type { CreateTaskPayload, Task, UpdateTaskPayload } from "../types";
+import type {
+  CreateTaskPayload,
+  Task,
+  UpdateTaskPayload,
+  TaskUser,
+} from "../types";
 
 export const tasksApi = {
-  async getTasks(): Promise<Task[]> {
-    const response = await api.get("/tasks");
+  async getTasks(projectId: string): Promise<Task[]> {
+    const response = await api.get(`/tasks/${projectId}`);
     return response.data;
   },
 
@@ -25,5 +31,10 @@ export const tasksApi = {
   async deleteTask(taskId: string): Promise<string> {
     await api.delete(`/tasks/${taskId}`);
     return taskId;
+  },
+
+  async getProjectMembers(projectId: string): Promise<TaskUser[]> {
+    const response = await api.get(`/projects/${projectId}/members`);
+    return response.data;
   },
 };

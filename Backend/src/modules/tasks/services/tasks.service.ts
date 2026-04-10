@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 import { TasksRepository } from '../repositories/tasks.repository';
 import { TaskBusinessValidator } from '../validators/task-business.validator';
@@ -19,7 +23,7 @@ export class TasksService {
     async createTask(createTaskDto: CreateTaskDto, currentUserId: string) {
         await this.taskBusinessValidator.validateCreateTask({
             projectId: createTaskDto.projectId,
-            assignedToId: createTaskDto.assignedToId,
+            assigneeIds: createTaskDto.assigneeIds,
             createdById: currentUserId,
         });
 
@@ -29,17 +33,21 @@ export class TasksService {
             status: createTaskDto.status ?? TaskStatus.TODO,
             priority: createTaskDto.priority ?? TaskPriority.MEDIUM,
             projectId: createTaskDto.projectId,
-            assignedToId: createTaskDto.assignedToId,
             createdById: currentUserId,
-            dueDate: new Date(createTaskDto.dueDate),
+            dueDate: createTaskDto.dueDate
+                ? new Date(createTaskDto.dueDate)
+                : undefined,
+            assigneeIds: [...new Set(createTaskDto.assigneeIds)],
         });
 
         //logging task creation
-        this.activityLogService.log({
+        await this.activityLogService.log({
             action: ActivityAction.TASK_CREATED,
             detail: {
                 taskTitle: createdTask.title,
-                assignedToId: createdTask.assignedToId ?? null,
+                assigneeIds: createdTask.assignees.map(
+                    (assignee) => assignee.userId,
+                ),
             },
             projectId: createdTask.projectId,
             userId: createdTask.createdById,
@@ -53,7 +61,39 @@ export class TasksService {
             projectId,
             userId: currentUserId,
         });
+
         return this.tasksRepository.findAllByProjectId(projectId);
+    }
+
+    async getTaskById(taskId: string, currentUserId: string) {
+        await this.taskBusinessValidator.validateTaskAccess({
+            taskId,
+            userId: currentUserId,
+        });
+
+        const task = await this.tasksRepository.findById(taskId);
+
+        if (!task) {
+            throw new NotFoundException(TASK_MESSAGES.TASK_NOT_FOUND);
+        }
+
+        return task;
+    }
+
+    async getTaskAssignees(taskId: string, currentUserId: string) {
+        await this.taskBusinessValidator.validateTaskAccess({
+            taskId,
+            userId: currentUserId,
+        });
+
+        const task = await this.tasksRepository.findTaskUsers(taskId);
+
+        return {
+            taskId: task?.id,
+            taskTitle: task?.title,
+            assignees:
+                task?.assignees.map((assignment) => assignment.user) ?? [],
+        };
     }
 
     async updateTask(
@@ -70,14 +110,21 @@ export class TasksService {
             throw new BadRequestException(TASK_MESSAGES.NO_FIELDS_TO_UPDATE);
         }
 
-        if (updateTaskDto.assignedToId) {
-            await this.taskBusinessValidator.validateAssignedUserInProject({
+        if (updateTaskDto.assigneeIds !== undefined) {
+            await this.taskBusinessValidator.validateAssigneesInProject({
                 projectId: task.projectId,
-                assignedToId: updateTaskDto.assignedToId,
+                assigneeIds: updateTaskDto.assigneeIds,
             });
         }
 
-        const updateData: any = {};
+        const updateData: {
+            title?: string;
+            description?: string;
+            status?: TaskStatus;
+            priority?: TaskPriority;
+            dueDate?: Date;
+            assigneeIds?: string[];
+        } = {};
 
         if (updateTaskDto.title !== undefined) {
             updateData.title = updateTaskDto.title;
@@ -95,8 +142,8 @@ export class TasksService {
             updateData.priority = updateTaskDto.priority;
         }
 
-        if (updateTaskDto.assignedToId !== undefined) {
-            updateData.assignedToId = updateTaskDto.assignedToId;
+        if (updateTaskDto.assigneeIds !== undefined) {
+            updateData.assigneeIds = [...new Set(updateTaskDto.assigneeIds)];
         }
 
         if (updateTaskDto.dueDate !== undefined) {

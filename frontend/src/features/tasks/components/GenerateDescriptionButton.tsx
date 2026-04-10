@@ -1,3 +1,4 @@
+// GenerateDescriptionButton.tsx
 interface GenerateDescriptionButtonProps {
   loading?: boolean;
   onClick: () => void;
@@ -12,7 +13,7 @@ export default function GenerateDescriptionButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
+      className="rounded-md bg-black px-4 py-2 text-white transition disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? "Generating..." : "Generate Description"}
     </button>

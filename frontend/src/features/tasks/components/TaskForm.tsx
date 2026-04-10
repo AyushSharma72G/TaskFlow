@@ -1,28 +1,40 @@
-import { useEffect, useState } from "react";
-import type { Task, TaskPriority, TaskStatus } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import Select from "react-select";
+import type { Task, TaskPriority, TaskStatus, TaskUser } from "../types";
 import GenerateDescriptionButton from "./GenerateDescriptionButton";
+import { X } from "lucide-react";
 
 interface TaskFormProps {
   initialData?: Task | null;
+  users: TaskUser[];
   loading?: boolean;
   aiLoading?: boolean;
   generatedDescription?: string;
   onGenerateDescription?: (title: string) => void;
+  onClose: () => void;
   onSubmit: (data: {
     title: string;
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
+    assigneeIds: string[];
     dueDate?: string | null;
   }) => void;
 }
 
+type AssigneeOption = {
+  value: string;
+  label: string;
+};
+
 export default function TaskForm({
   initialData,
+  users,
   loading,
   aiLoading,
   generatedDescription,
   onGenerateDescription,
+  onClose,
   onSubmit,
 }: TaskFormProps) {
   const [title, setTitle] = useState(initialData?.title || "");
@@ -36,12 +48,41 @@ export default function TaskForm({
     initialData?.priority || "MEDIUM",
   );
   const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    initialData?.assignees?.map((assignee) => assignee.userId) || [],
+  );
 
   useEffect(() => {
     if (generatedDescription) {
       setDescription(generatedDescription);
     }
   }, [generatedDescription]);
+
+  useEffect(() => {
+    setTitle(initialData?.title || "");
+    setDescription(initialData?.description || "");
+    setStatus(initialData?.status || "TODO");
+    setPriority(initialData?.priority || "MEDIUM");
+    setDueDate(initialData?.dueDate || "");
+    setAssigneeIds(
+      initialData?.assignees?.map((assignee) => assignee.userId) || [],
+    );
+  }, [initialData]);
+
+  const assigneeOptions = useMemo<AssigneeOption[]>(
+    () =>
+      users.map((member) => ({
+        value: member.userId,
+        label: `${member.user.name} (${member.user.email})`,
+      })),
+    [users],
+  );
+
+  const selectedAssignees = useMemo(
+    () =>
+      assigneeOptions.filter((option) => assigneeIds.includes(option.value)),
+    [assigneeOptions, assigneeIds],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,84 +92,151 @@ export default function TaskForm({
       description,
       status,
       priority,
+      assigneeIds,
       dueDate: dueDate || null,
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border p-4">
-      <div>
-        <label className="mb-1 block text-sm font-medium">Title</label>
-        <input
-          type="text"
-          className="w-full rounded-md border px-3 py-2"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter task title"
-        />
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+      <div className="relative w-full max-w-2xl rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)]">
+        <button
+          type="button"
+          disabled={loading}
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-muted)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+        >
+          <X size={18} />
+        </button>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium">Description</label>
-        <textarea
-          className="w-full rounded-md border px-3 py-2"
-          rows={4}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter task description"
-        />
-      </div>
-
-      <GenerateDescriptionButton
-        loading={aiLoading}
-        onClick={() => onGenerateDescription?.(title)}
-      />
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium">Status</label>
-          <select
-            className="w-full rounded-md border px-3 py-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as TaskStatus)}
-          >
-            <option value="TODO">TODO</option>
-            <option value="IN_PROGRESS">IN_PROGRESS</option>
-            <option value="DONE">DONE</option>
-          </select>
+        <div className="border-b border-[var(--color-border)] px-6 py-5">
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
+            {initialData ? "Update Task" : "Create New Task"}
+          </h2>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">Priority</label>
-          <select
-            className="w-full rounded-md border px-3 py-2"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as TaskPriority)}
-          >
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-          </select>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
+              Title
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter task title"
+            />
+          </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium">Due Date</label>
-          <input
-            type="date"
-            className="w-full rounded-md border px-3 py-2"
-            value={dueDate ? dueDate.slice(0, 10) : ""}
-            onChange={(e) => setDueDate(e.target.value)}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
+              Description
+            </label>
+            <textarea
+              className="min-h-[120px] w-full resize-none rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter task description"
+            />
+          </div>
+
+          <GenerateDescriptionButton
+            loading={aiLoading}
+            onClick={() => onGenerateDescription?.(title)}
           />
-        </div>
-      </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-      >
-        {loading ? "Saving..." : initialData ? "Update Task" : "Create Task"}
-      </button>
-    </form>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
+              Assignees
+            </label>
+
+            <Select<AssigneeOption, true>
+              isMulti
+              options={assigneeOptions}
+              value={selectedAssignees}
+              onChange={(selectedOptions) =>
+                setAssigneeIds(
+                  selectedOptions
+                    ? selectedOptions.map((option) => option.value)
+                    : [],
+                )
+              }
+              placeholder="Select assignees..."
+              classNamePrefix="react-select"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
+                Status
+              </label>
+              <select
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              >
+                <option value="TODO">TODO</option>
+                <option value="IN_PROGRESS">IN PROGRESS</option>
+                <option value="DONE">DONE</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
+                Priority
+              </label>
+              <select
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              >
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
+                Due Date
+              </label>
+              <input
+                min={new Date().toISOString().split("T")[0]}
+                type="date"
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
+                value={dueDate ? dueDate.slice(0, 10) : ""}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--color-border)] pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-hover)]"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading
+                ? "Saving..."
+                : initialData
+                  ? "Update Task"
+                  : "Create Task"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

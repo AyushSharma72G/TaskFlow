@@ -39,6 +39,22 @@ export class TasksController {
         return this.tasksService.getTasksByProject(projectId, req.user.id);
     }
 
+    // get a single task by id
+    @Get(':taskId')
+    @UseGuards(JwtCookieAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getTaskById(@Param('taskId') taskId: string, @Req() req: any) {
+        return this.tasksService.getTaskById(taskId, req.user.id);
+    }
+
+    // get all assignees of a task
+    @Get(':taskId/assignees')
+    @UseGuards(JwtCookieAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getTaskAssignees(@Param('taskId') taskId: string, @Req() req: any) {
+        return this.tasksService.getTaskAssignees(taskId, req.user.id);
+    }
+
     // update the task
     @Patch(':taskId')
     @UseGuards(JwtCookieAuthGuard)
@@ -51,6 +67,7 @@ export class TasksController {
         return this.tasksService.updateTask(taskId, updateTaskDto, req.user.id);
     }
 
+    // delete the task
     @Delete(':taskId')
     @UseGuards(JwtCookieAuthGuard)
     @HttpCode(HttpStatus.OK)

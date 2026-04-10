@@ -11,23 +11,23 @@ import { TASK_MESSAGES } from '../constants/task-messages.constant';
 export class TaskBusinessValidator {
     constructor(private readonly prisma: PrismaService) {}
 
-    //  validate conditions to create the task
-
     async validateCreateTask(params: {
         projectId: string;
-        assignedToId: string;
+        assigneeIds: string[];
         createdById: string;
     }): Promise<void> {
-        const { projectId, assignedToId, createdById } = params;
+        const { projectId, assigneeIds, createdById } = params;
 
-        const [project, assignedUser, creatorMembership, assignedMembership] =
+        // if (!assigneeIds.length) {
+        //     throw new BadRequestException(TASK_MESSAGES.ASSIGNEES_REQUIRED);
+        // }
+
+        const uniqueAssigneeIds = [...new Set(assigneeIds)];
+
+        const [project, creatorMembership, users, memberships] =
             await Promise.all([
                 this.prisma.project.findUnique({
                     where: { id: projectId },
-                    select: { id: true },
-                }),
-                this.prisma.user.findUnique({
-                    where: { id: assignedToId },
                     select: { id: true },
                 }),
                 this.prisma.projectMember.findUnique({
@@ -37,25 +37,25 @@ export class TaskBusinessValidator {
                             projectId,
                         },
                     },
-                    select: { id: true, role: true },
+                    select: { id: true },
                 }),
-                this.prisma.projectMember.findUnique({
+                this.prisma.user.findMany({
                     where: {
-                        userId_projectId: {
-                            userId: assignedToId,
-                            projectId,
-                        },
+                        id: { in: uniqueAssigneeIds },
                     },
-                    select: { id: true, role: true },
+                    select: { id: true },
+                }),
+                this.prisma.projectMember.findMany({
+                    where: {
+                        projectId,
+                        userId: { in: uniqueAssigneeIds },
+                    },
+                    select: { userId: true },
                 }),
             ]);
 
         if (!project) {
             throw new NotFoundException(TASK_MESSAGES.PROJECT_NOT_FOUND);
-        }
-
-        if (!assignedUser) {
-            throw new NotFoundException(TASK_MESSAGES.ASSIGNED_USER_NOT_FOUND);
         }
 
         if (!creatorMembership) {
@@ -64,14 +64,16 @@ export class TaskBusinessValidator {
             );
         }
 
-        if (!assignedMembership) {
+        if (users.length !== uniqueAssigneeIds.length) {
+            throw new NotFoundException(TASK_MESSAGES.ASSIGNED_USER_NOT_FOUND);
+        }
+
+        if (memberships.length !== uniqueAssigneeIds.length) {
             throw new BadRequestException(
                 TASK_MESSAGES.ASSIGNED_USER_NOT_PROJECT_MEMBER,
             );
         }
     }
-
-    // if the user can change the project
 
     async validateProjectAccess(params: {
         projectId: string;
@@ -106,47 +108,45 @@ export class TaskBusinessValidator {
         }
     }
 
-    // if the user cann acccess the task
     async validateTaskAccess(params: {
         taskId: string;
         userId: string;
     }): Promise<{
         id: string;
         projectId: string;
-        assignedToId: string | null;
         createdById: string;
         status: string;
         title: string;
     }> {
         const { taskId, userId } = params;
 
-        const task = await this.prisma.task.findUnique({
-            where: { id: taskId },
-            select: {
-                id: true,
-                projectId: true,
-                assignedToId: true,
-                createdById: true,
-                title: true,
-                status: true,
-            },
-        });
+        const [task, allMemberships] = await Promise.all([
+            this.prisma.task.findUnique({
+                where: { id: taskId },
+                select: {
+                    id: true,
+                    projectId: true,
+                    createdById: true,
+                    status: true,
+                    title: true,
+                },
+            }),
+
+            this.prisma.projectMember.findMany({
+                where: { userId },
+                select: { projectId: true },
+            }),
+        ]);
 
         if (!task) {
             throw new NotFoundException(TASK_MESSAGES.TASK_NOT_FOUND);
         }
 
-        const membership = await this.prisma.projectMember.findUnique({
-            where: {
-                userId_projectId: {
-                    userId,
-                    projectId: task.projectId,
-                },
-            },
-            select: { id: true },
-        });
+        const isMember = allMemberships.some(
+            (m) => m.projectId === task.projectId,
+        );
 
-        if (!membership) {
+        if (!isMember) {
             throw new ForbiddenException(
                 TASK_MESSAGES.CREATOR_NOT_PROJECT_MEMBER,
             );
@@ -155,35 +155,35 @@ export class TaskBusinessValidator {
         return task;
     }
 
-    // if the user exist in the project
-
-    async validateAssignedUserInProject(params: {
+    async validateAssigneesInProject(params: {
         projectId: string;
-        assignedToId: string;
+        assigneeIds: string[];
     }): Promise<void> {
-        const { projectId, assignedToId } = params;
+        const { projectId, assigneeIds } = params;
 
-        const [assignedUser, assignedMembership] = await Promise.all([
-            this.prisma.user.findUnique({
-                where: { id: assignedToId },
-                select: { id: true },
-            }),
-            this.prisma.projectMember.findUnique({
+        const uniqueAssigneeIds = [...new Set(assigneeIds)];
+
+        const [users, memberships] = await Promise.all([
+            this.prisma.user.findMany({
                 where: {
-                    userId_projectId: {
-                        userId: assignedToId,
-                        projectId,
-                    },
+                    id: { in: uniqueAssigneeIds },
                 },
                 select: { id: true },
             }),
+            this.prisma.projectMember.findMany({
+                where: {
+                    projectId,
+                    userId: { in: uniqueAssigneeIds },
+                },
+                select: { userId: true },
+            }),
         ]);
 
-        if (!assignedUser) {
+        if (users.length !== uniqueAssigneeIds.length) {
             throw new NotFoundException(TASK_MESSAGES.ASSIGNED_USER_NOT_FOUND);
         }
 
-        if (!assignedMembership) {
+        if (memberships.length !== uniqueAssigneeIds.length) {
             throw new BadRequestException(
                 TASK_MESSAGES.ASSIGNED_USER_NOT_PROJECT_MEMBER,
             );
