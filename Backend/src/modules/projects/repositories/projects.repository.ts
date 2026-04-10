@@ -13,10 +13,16 @@ export type ProjectListItem = {
     description: string;
     dueDate: Date;
     createdAt: Date;
+    ownerId: string;
+
     memberCount: number;
     totalTasks: number;
     completedTasks: number;
-    progress: number;
+    avatars: {
+        id: string;
+        name: string;
+        avatarUrl: string | null;
+    }[];
 };
 
 export type ProjectCreateResponse = {
@@ -117,6 +123,19 @@ export class ProjectsRepository {
                         description: true,
                         dueDate: true,
                         createdAt: true,
+                        ownerId: true,
+                        members: {
+                            take: 5,
+                            select: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        avatarUrl: true,
+                                    },
+                                },
+                            },
+                        },
                         _count: {
                             select: {
                                 members: true,
@@ -135,6 +154,7 @@ export class ProjectsRepository {
 
         const projects = memberships.map((m) => m.project);
         const projectIds = projects.map((p) => p.id);
+        if (projectIds.length === 0) return [];
 
         // Count completed tasks per project (TaskStatus.DONE)
         const completedByProject = await this.prisma.task.groupBy({
@@ -156,13 +176,19 @@ export class ProjectsRepository {
             description: p.description ?? '',
             dueDate: p.dueDate,
             createdAt: p.createdAt,
+            ownerId: p.ownerId,
             memberCount: p._count.members,
             totalTasks: p._count.tasks,
             completedTasks: completedMap.get(p.id) ?? 0,
+            avatars: p.members.map((m) => ({
+                id: m.user.id,
+                name: m.user.name,
+                avatarUrl: m.user.avatarUrl,
+            })),
         }));
     }
 
-    async createProjectAndAddAdminMember(params: {
+    async createProjectAndAddOwnerMember(params: {
         userId: string;
         title: string;
         description?: string;
