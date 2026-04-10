@@ -29,20 +29,7 @@ export class ProjectsService {
         const rows =
             await this.projectsRepository.findProjectsWhereUserIsMember(userId);
 
-        // Compute progress without returning full tasks array
-        return rows.map((p) => {
-            const totalTasks = p.totalTasks;
-            const completedTasks = p.completedTasks;
-            const progress =
-                totalTasks === 0
-                    ? 0
-                    : Math.round((completedTasks / totalTasks) * 100);
-
-            return {
-                ...p,
-                progress,
-            };
-        });
+        return rows;
     }
 
     // POST /projects
@@ -63,14 +50,14 @@ export class ProjectsService {
         const dueDate = this.parseDueDate(dto.dueDate);
 
         const project =
-            await this.projectsRepository.createProjectAndAddAdminMember({
+            await this.projectsRepository.createProjectAndAddOwnerMember({
                 userId,
                 title: dto.title.trim(),
                 description: dto.description,
                 dueDate,
             });
 
-        this.activityLogService.log({
+        void this.activityLogService.log({
             action: ActivityAction.PROJECT_CREATED,
             detail: { projectTitle: project.title },
             projectId: project.id,
