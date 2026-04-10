@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import PageEatenImg from '../../../dist/assets/notFoundPage/undraw_page-eaten_b2rt.svg'
+import notFoundPageImage from '../../../public/images/notFoundPageImg.svg'
 import { House, ArrowLeft } from 'lucide-react';
 
 
@@ -9,7 +9,7 @@ const NotFoundPage = ()=>{
     return(
         <div className="flex justify-center align-center">
             <div className="flex flex-col justify-center align-center w-[600px] h-[500px]  bg-[var(--color-surface)]">
-            <img src={PageEatenImg} width={200} className="m-auto"/>
+            <img src={notFoundPageImage} width={200} className="m-auto"/>
            
            <div className="text-[var(--color-text-secondary)] text-center font-[var(--font-weight-heading)] text-xl ">
              <p>404</p>
@@ -31,7 +31,7 @@ const NotFoundPage = ()=>{
                 className="cursor-pointer rounded-sm bg-[var(--color-primary)] text-'#ffffff' w-[150px] h-[50px] flex justify-around p-3">
                     <ArrowLeft size={20} color="#ffffff" className="mt-1 font-[var(--font-weight-dexcription)]"/>
                     <p className="text-white font-[var(--font-weight-dexcription)]">
-                        Go Back c2248aa
+                        Go Back 
                     </p>
                 </div>
             </div>
