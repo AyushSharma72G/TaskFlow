@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Role, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ProjectMember, User } from '@prisma/client';
+import { TaskPriority } from '@prisma/client';
 
 export type ProjectMemberWithUser = ProjectMember & {
     user: User;
@@ -55,18 +56,23 @@ export type ProjectTaskDetails = {
     title: string;
     description: string | null;
     status: TaskStatus;
-    priority: import('@prisma/client').TaskPriority;
+    priority: TaskPriority;
     dueDate: Date | null;
-    assignedToId: string | null;
     createdById: string;
     createdAt: Date;
     updatedAt: Date;
-    assignedTo: {
+    assignees: {
         id: string;
-        name: string;
-        email: string;
-        avatarUrl: string | null;
-    } | null;
+        userId: string;
+        taskId: string;
+        assignedAt: Date;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            avatarUrl: string | null;
+        };
+    }[];
     createdBy: {
         id: string;
         name: string;
@@ -79,7 +85,7 @@ export type ProjectDetails = {
     id: string;
     title: string;
     description: string;
-    dueDate: Date;
+    dueDate: Date | null;
     createdAt: Date;
     updatedAt: Date;
     memberCount: number;
@@ -270,7 +276,7 @@ export class ProjectsRepository {
             id: string;
             title: string;
             description: string;
-            dueDate: Date;
+            dueDate: Date | null;
             createdAt: Date;
             updatedAt: Date;
             _count: { members: number; tasks: number };
@@ -324,16 +330,23 @@ export class ProjectsRepository {
                                 status: true,
                                 priority: true,
                                 dueDate: true,
-                                assignedToId: true,
                                 createdById: true,
                                 createdAt: true,
                                 updatedAt: true,
-                                assignedTo: {
+                                assignees: {
                                     select: {
                                         id: true,
-                                        name: true,
-                                        email: true,
-                                        avatarUrl: true,
+                                        userId: true,
+                                        taskId: true,
+                                        assignedAt: true,
+                                        user: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                email: true,
+                                                avatarUrl: true,
+                                            },
+                                        },
                                     },
                                 },
                                 createdBy: {
@@ -362,6 +375,7 @@ export class ProjectsRepository {
             },
         };
     }
+
     async findUserByEmail(email: string): Promise<User | null> {
         return this.prisma.user.findUnique({
             where: { email },

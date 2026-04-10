@@ -1,8 +1,8 @@
-import type { RootState } from "../../../store/index";
+// tasksSelectors.ts
+import type { RootState } from "../../../store";
 
 export const selectTasksState = (state: RootState) => state.tasks;
 
-export const selectAllTasks = (state: RootState) => state.tasks.tasks;
 export const selectTasksLoading = (state: RootState) => state.tasks.loading;
 export const selectTasksError = (state: RootState) => state.tasks.error;
 export const selectSelectedTask = (state: RootState) =>
@@ -11,6 +11,7 @@ export const selectTaskFilters = (state: RootState) => state.tasks.filters;
 export const selectAiLoading = (state: RootState) => state.tasks.aiLoading;
 export const selectGeneratedDescription = (state: RootState) =>
   state.tasks.generatedDescription;
+export const selectProjectMembers = (state: RootState) => state.tasks.members;
 
 export const selectFilteredTasks = (state: RootState) => {
   const { tasks, filters } = state.tasks;
@@ -22,13 +23,17 @@ export const selectFilteredTasks = (state: RootState) => {
     const matchesPriority =
       filters.priority === "ALL" || task.priority === filters.priority;
 
-    const search = filters.search.trim().toLowerCase();
+    const matchesAssignee =
+      filters.assigneeId === "ALL" ||
+      task.assignees.some((assignee) => assignee.id === filters.assigneeId);
+
+    const search = filters.search?.trim().toLowerCase() || "";
 
     const matchesSearch =
       !search ||
       task.title.toLowerCase().includes(search) ||
-      task.description.toLowerCase().includes(search);
+      (task.description || "").toLowerCase().includes(search);
 
-    return matchesStatus && matchesPriority && matchesSearch;
+    return matchesStatus && matchesPriority && matchesAssignee && matchesSearch;
   });
 };
