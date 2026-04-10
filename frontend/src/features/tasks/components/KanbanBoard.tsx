@@ -1,4 +1,3 @@
-// KanbanBoard.tsx
 import type { Task, TaskStatus } from "../types";
 import TaskCard from "./TaskCard";
 

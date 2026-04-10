@@ -18,10 +18,6 @@ export class TaskBusinessValidator {
     }): Promise<void> {
         const { projectId, assigneeIds, createdById } = params;
 
-        // if (!assigneeIds.length) {
-        //     throw new BadRequestException(TASK_MESSAGES.ASSIGNEES_REQUIRED);
-        // }
-
         const uniqueAssigneeIds = [...new Set(assigneeIds)];
 
         const [project, creatorMembership, users, memberships] =

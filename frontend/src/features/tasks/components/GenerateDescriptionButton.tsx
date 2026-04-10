@@ -1,4 +1,3 @@
-// GenerateDescriptionButton.tsx
 interface GenerateDescriptionButtonProps {
   loading?: boolean;
   onClick: () => void;

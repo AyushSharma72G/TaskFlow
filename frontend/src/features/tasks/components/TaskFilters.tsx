@@ -1,4 +1,3 @@
-// TaskFilters.tsx
 import type { TaskFilters as TaskFiltersType, TaskUser } from "../types";
 
 interface TaskFiltersProps {

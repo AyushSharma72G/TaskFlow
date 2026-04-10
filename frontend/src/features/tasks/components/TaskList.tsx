@@ -1,4 +1,3 @@
-// TaskList.tsx
 import type { Task } from "../types";
 import TaskCard from "./TaskCard";
 interface TaskListProps {

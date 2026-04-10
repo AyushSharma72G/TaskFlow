@@ -1,4 +1,3 @@
-// TaskCard.tsx
 import type { Task } from "../types";
 import { CalendarDays, Pencil, Trash2, User } from "lucide-react";
 
@@ -9,16 +8,16 @@ interface TaskCardProps {
 }
 
 export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
-  const statusClasses: Record<Task["status"], string> = {
-    TODO: "bg-blue-50 text-blue-700 border border-blue-100",
-    IN_PROGRESS: "bg-amber-50 text-amber-700 border border-amber-100",
-    DONE: "bg-green-50 text-green-700 border border-green-100",
+  const statusClassMap: Record<Task["status"], string> = {
+    TODO: "status-todo",
+    IN_PROGRESS: "status-in-progress",
+    DONE: "status-done",
   };
 
-  const priorityClasses: Record<Task["priority"], string> = {
-    LOW: "bg-slate-100 text-slate-700 border border-slate-200",
-    MEDIUM: "bg-yellow-50 text-yellow-700 border border-yellow-100",
-    HIGH: "bg-red-50 text-red-700 border border-red-100",
+  const priorityClassMap: Record<Task["priority"], string> = {
+    LOW: "priority-low",
+    MEDIUM: "priority-medium",
+    HIGH: "priority-high",
   };
 
   const formattedStatus =
@@ -64,15 +63,11 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[task.status]}`}
-        >
+        <span className={`status ${statusClassMap[task.status]}`}>
           {formattedStatus}
         </span>
 
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityClasses[task.priority]}`}
-        >
+        <span className={`priority ${priorityClassMap[task.priority]}`}>
           {task.priority}
         </span>
 
