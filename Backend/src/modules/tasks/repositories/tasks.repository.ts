@@ -205,13 +205,12 @@ Instructions:
             const result = await model.generateContent(prompt);
             const description = result.response.text()?.trim();
             if (!description) {
-                throw new InternalServerErrorException(
-                    ' ',
-                );
+                throw new InternalServerErrorException(' ');
             }
 
             return description;
         } catch (error) {
+            console.log(error);
             throw new InternalServerErrorException(
                 'Failed to generate task description',
             );

@@ -132,9 +132,9 @@ export default function TasksPage() {
     handleCloseTaskModal();
   };
 
-  const handleGenerateDescription = (title: string, CURRENT_PROJECT_ID: string) => {
+  const handleGenerateDescription = (title: string, projectId: string) => {
     if (!title.trim()) return;
-    dispatch(generateTaskDescription({ title, CURRENT_PROJECT_ID }));
+    dispatch(generateTaskDescription({ title, projectId }));
   };
 
   if (!projectId) {
@@ -232,6 +232,7 @@ export default function TasksPage() {
         <TaskForm
           initialData={editingTask}
           users={members}
+          projectId={projectId}
           loading={loading}
           aiLoading={aiLoading}
           generatedDescription={generatedDescription}

@@ -6,11 +6,12 @@ import { X } from "lucide-react";
 
 interface TaskFormProps {
   initialData?: Task | null;
+  projectId: string;
   users: TaskUser[];
   loading?: boolean;
   aiLoading?: boolean;
   generatedDescription?: string;
-  onGenerateDescription?: (title: string) => void;
+  onGenerateDescription?: (title: string, projectId: string) => void;
   onClose: () => void;
   onSubmit: (data: {
     title: string;
@@ -29,6 +30,7 @@ type AssigneeOption = {
 
 export default function TaskForm({
   initialData,
+  projectId,
   users,
   loading,
   aiLoading,
@@ -87,12 +89,16 @@ export default function TaskForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const cleanedAssigneeIds = assigneeIds.filter(
+      (id): id is string => typeof id === "string" && id.trim() !== "",
+    );
+
     onSubmit({
       title,
       description,
       status,
       priority,
-      assigneeIds,
+      assigneeIds: cleanedAssigneeIds,
       dueDate: dueDate || null,
     });
   };
@@ -144,7 +150,7 @@ export default function TaskForm({
 
           <GenerateDescriptionButton
             loading={aiLoading}
-            onClick={() => onGenerateDescription?.(title)}
+            onClick={() => onGenerateDescription?.(title, projectId)}
           />
 
           <div>

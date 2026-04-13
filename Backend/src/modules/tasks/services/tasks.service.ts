@@ -96,7 +96,6 @@ export class TasksService {
                 task?.assignees.map((assignment) => assignment.user) ?? [],
         };
     }
-
     async updateTask(
         taskId: string,
         updateTaskDto: UpdateTaskDto,
@@ -111,7 +110,7 @@ export class TasksService {
             throw new BadRequestException(TASK_MESSAGES.NO_FIELDS_TO_UPDATE);
         }
 
-        if (updateTaskDto.assigneeIds !== undefined) {
+        if (updateTaskDto.assigneeIds && updateTaskDto.assigneeIds.length > 0) {
             await this.taskBusinessValidator.validateAssigneesInProject({
                 projectId: task.projectId,
                 assigneeIds: updateTaskDto.assigneeIds,
@@ -156,7 +155,6 @@ export class TasksService {
             updateData,
         );
 
-        //logging task update
         if (
             updateTaskDto.status !== undefined &&
             updateTaskDto.status !== task.status
