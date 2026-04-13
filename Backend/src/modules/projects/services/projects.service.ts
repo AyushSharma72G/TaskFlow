@@ -13,14 +13,15 @@ import {
     ProjectUpdateResponse,
     ProjectsRepository,
 } from '../repositories/projects.repository';
-import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
 import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
+import { EventEmitter2 } from 'eventemitter2';
+import { ProjectCreatedEvent } from 'src/modules/activity_log/events/activity-log.events';
 
 @Injectable()
 export class ProjectsService {
     constructor(
         private readonly projectsRepository: ProjectsRepository,
-        private readonly activityLogService: ActivityLogService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     // GET /projects
@@ -57,12 +58,10 @@ export class ProjectsService {
                 dueDate,
             });
 
-        void this.activityLogService.log({
-            action: ActivityAction.PROJECT_CREATED,
-            detail: { projectTitle: project.title },
-            projectId: project.id,
-            userId,
+        const event = new ProjectCreatedEvent(project.id, userId, {
+            projectTitle: project.title,
         });
+        this.eventEmitter.emit(ActivityAction.PROJECT_CREATED, event);
 
         return project;
     }
