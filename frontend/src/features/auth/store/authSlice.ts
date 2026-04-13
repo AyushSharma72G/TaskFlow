@@ -5,8 +5,10 @@ import {
   fetchProfileThunk,
   fetchRoleByProjectThunk,
   loginThunk,
+  removeAvatarThunk,
   logoutThunk,
   registerThunk,
+  uploadAvatarThunk,
   updateProfileThunk,
 } from "./authThunks";
 
@@ -108,6 +110,34 @@ const authSlice = createSlice({
       .addCase(updateProfileThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = (action.payload as string) || "Profile update failed";
+      })
+
+      .addCase(uploadAvatarThunk.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(uploadAvatarThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(uploadAvatarThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = (action.payload as string) || "Avatar upload failed";
+      })
+
+      .addCase(removeAvatarThunk.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(removeAvatarThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(removeAvatarThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = (action.payload as string) || "Avatar removal failed";
       })
 
       .addCase(changePasswordThunk.pending, (state) => {
