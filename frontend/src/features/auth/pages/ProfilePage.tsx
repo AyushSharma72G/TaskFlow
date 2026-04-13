@@ -20,12 +20,6 @@ type FeedbackState = {
   message: string;
 };
 
-const FEEDBACK_TONE_STYLES: Record<FeedbackState["tone"], string> = {
-  success: "border-success/35 bg-success/10 text-text-primary",
-  error: "border-danger/35 bg-danger/10 text-danger",
-  info: "border-border bg-muted text-text-primary",
-};
-
 const formatDateLabel = (value?: string): string => {
   if (!value) {
     return "Unavailable";
@@ -221,7 +215,7 @@ export default function ProfilePage() {
         </div>
 
         {feedback ? (
-          <div className={`mb-4 rounded-md border px-3 py-2 text-sm ${FEEDBACK_TONE_STYLES[feedback.tone]}`}>
+          <div className={`feedback-banner mb-4 ${feedback.tone === "success" ? "feedback-banner-success" : feedback.tone === "error" ? "feedback-banner-error" : "feedback-banner-info"}`}>
             {feedback.message}
           </div>
         ) : null}
