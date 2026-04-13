@@ -5,10 +5,8 @@ import PublicOnlyRoute from "../shared/components/guards/PublicOnlyRoute";
 import AuthPage from "../features/auth/pages/AuthPage";
 import ProfilePage from "../features/auth/pages/ProfilePage";
 import {
-  // ActivityPage,
   DashboardPage,
   HomePage,
-  // TasksPage,
 } from "./placeholderPages";
 import ActivityPage from "../features/activity/pages/ActivityPage";
 import TasksPage from "../features/tasks/pages/TasksPage";

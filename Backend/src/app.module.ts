@@ -9,8 +9,15 @@ import { ActivityLogModule } from './modules/activity_log/activity-log.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
-  imports: [ EventEmitterModule.forRoot() , PrismaModule, AuthModule, ProjectsModule ,TasksModule, ActivityLogModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        EventEmitterModule.forRoot(),
+        PrismaModule,
+        AuthModule,
+        ProjectsModule,
+        TasksModule,
+        ActivityLogModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}

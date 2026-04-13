@@ -15,8 +15,10 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ProjectMembersService {
-    constructor(private readonly repo: ProjectsRepository,
-        private readonly eventEmitter: EventEmitter2,) {}
+    constructor(
+        private readonly repo: ProjectsRepository,
+        private readonly eventEmitter: EventEmitter2,
+    ) {}
 
     async invite(
         userId: string,
@@ -43,8 +45,11 @@ export class ProjectMembersService {
 
         const member = await this.repo.addMember(projectId, user.id);
 
-        const event = new MemberInvitedEvent(projectId, userId, { invitedEmail: invitedUser.email, invitedUserName: invitedUser.name }  );
-this.eventEmitter.emit(ActivityAction.MEMBER_INVITED, event);
+        const event = new MemberInvitedEvent(projectId, userId, {
+            invitedEmail: invitedUser.email,
+            invitedUserName: invitedUser.name,
+        });
+        this.eventEmitter.emit(ActivityAction.MEMBER_INVITED, event);
 
         return member;
     }

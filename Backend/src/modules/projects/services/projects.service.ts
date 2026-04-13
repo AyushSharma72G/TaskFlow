@@ -58,7 +58,9 @@ export class ProjectsService {
                 dueDate,
             });
 
-        const event = new ProjectCreatedEvent(project.id, userId, { projectTitle: project.title });
+        const event = new ProjectCreatedEvent(project.id, userId, {
+            projectTitle: project.title,
+        });
         this.eventEmitter.emit(ActivityAction.PROJECT_CREATED, event);
 
         return project;
