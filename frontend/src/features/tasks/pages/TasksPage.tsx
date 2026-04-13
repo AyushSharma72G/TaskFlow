@@ -48,7 +48,6 @@ const CURRENT_PROJECT_ID = "cmnrc9zzk00010vt3iyjlaybi";
 
 export default function TasksPage() {
   const dispatch = useAppDispatch();
-
   const tasks = useAppSelector(selectFilteredTasks);
   const members = useAppSelector(selectProjectMembers);
   const loading = useAppSelector(selectTasksLoading);

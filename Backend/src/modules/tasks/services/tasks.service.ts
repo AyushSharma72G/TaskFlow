@@ -8,6 +8,7 @@ import { TasksRepository } from '../repositories/tasks.repository';
 import { TaskBusinessValidator } from '../validators/task-business.validator';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
+import { AiDescriptionDto } from '../dto/ai-description.dto';
 import { TASK_MESSAGES } from '../constants/task-messages.constant';
 import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
 import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
@@ -192,5 +193,13 @@ export class TasksService {
         });
 
         return { message: TASK_MESSAGES.TASK_DELETED_SUCCESSFULLY };
+    }
+
+    // generate task description
+    async generateTaskDescription(aiDescriptionDto: AiDescriptionDto) {
+        const description = await this.tasksRepository.generateDescription({
+            title: aiDescriptionDto.title,
+        });
+        return { description };
     }
 }

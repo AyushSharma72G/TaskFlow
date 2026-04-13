@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -8,8 +9,17 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { ActivityLogModule } from './modules/activity_log/activity-log.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ProjectsModule ,TasksModule, ActivityLogModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+        }),
+        PrismaModule,
+        AuthModule,
+        ProjectsModule,
+        TasksModule,
+        ActivityLogModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}

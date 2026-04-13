@@ -14,7 +14,9 @@ import {
 import { TasksService } from '../services/tasks.service';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
+import { AiDescriptionDto } from '../dto/ai-description.dto';
 import { JwtCookieAuthGuard } from 'src/common/guards';
+import type { AuthRequest } from 'src/common/guards';
 
 @Controller('tasks')
 export class TasksController {
@@ -62,7 +64,7 @@ export class TasksController {
     async updateTask(
         @Param('taskId') taskId: string,
         @Body() updateTaskDto: UpdateTaskDto,
-        @Req() req: any,
+        @Req() req: AuthRequest,
     ) {
         return this.tasksService.updateTask(taskId, updateTaskDto, req.user.id);
     }
@@ -73,5 +75,15 @@ export class TasksController {
     @HttpCode(HttpStatus.OK)
     async deleteTask(@Param('taskId') taskId: string, @Req() req: any) {
         return this.tasksService.deleteTask(taskId, req.user.id);
+    }
+
+    @Post('ai/generate-description')
+    @UseGuards(JwtCookieAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async generateTaskDescription(
+        @Body() aiDescriptionDto: AiDescriptionDto,
+        @Req() req: any,
+    ) {
+        return this.tasksService.generateTaskDescription(aiDescriptionDto);
     }
 }
