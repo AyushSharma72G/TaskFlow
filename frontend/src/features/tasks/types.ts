@@ -63,6 +63,7 @@ export interface TaskFilters {
 
 export interface GenerateDescriptionPayload {
   title: string;
+  projectId: string;
 }
 
 export interface GenerateDescriptionResponse {

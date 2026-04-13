@@ -3,15 +3,15 @@ import { ActivityActionType } from '../constants/activity-action';
 import { Prisma } from '@prisma/client';
 
 export class CreateActivityLogDto {
-  action: ActivityActionType;
+    action: ActivityActionType;
 
-  @IsOptional()
-  @IsString()
-  detail?: Prisma.InputJsonValue;
+    @IsOptional()
+    @IsString()
+    detail?: Record<string, any>;
 
-  @IsUUID()
-  projectId: string;
+    @IsUUID()
+    projectId: string;
 
-  @IsUUID()
-  userId: string;
-} 
+    @IsUUID()
+    userId: string;
+}

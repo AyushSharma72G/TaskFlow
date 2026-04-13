@@ -1,5 +1,6 @@
 // TasksPage.tsx
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { LayoutList, Kanban } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import TaskForm from "../components/TaskForm";
@@ -21,6 +22,7 @@ import {
 
 import {
   clearGeneratedDescription,
+  clearTasksError,
   setPriorityFilter,
   setAssignedToFilter,
   setStatusFilter,
@@ -44,11 +46,9 @@ type TaskFormData = {
   dueDate?: string | null;
 };
 
-const CURRENT_PROJECT_ID = "cmnrc9zzk00010vt3iyjlaybi";
-
 export default function TasksPage() {
+  const { id: projectId } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
-
   const tasks = useAppSelector(selectFilteredTasks);
   const members = useAppSelector(selectProjectMembers);
   const loading = useAppSelector(selectTasksLoading);
@@ -62,15 +62,22 @@ export default function TasksPage() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchTasks(CURRENT_PROJECT_ID));
-    dispatch(fetchMembers(CURRENT_PROJECT_ID));
-  }, [dispatch]);
+    if (!projectId) return;
+    dispatch(fetchTasks(projectId));
+    dispatch(fetchMembers(projectId));
+  }, [dispatch, projectId]);
 
   useEffect(() => {
     return () => {
       dispatch(clearGeneratedDescription());
     };
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!error) return;
+    const t = window.setTimeout(() => dispatch(clearTasksError()), 6000);
+    return () => window.clearTimeout(t);
+  }, [error, dispatch]);
 
   const handleOpenCreateModal = () => {
     setEditingTask(null);
@@ -109,6 +116,7 @@ export default function TasksPage() {
       return;
     }
 
+    if (!projectId) return;
     await dispatch(
       createTask({
         title: data.title,
@@ -117,17 +125,25 @@ export default function TasksPage() {
         priority: data.priority,
         assigneeIds: data.assigneeIds,
         dueDate: data.dueDate,
-        projectId: CURRENT_PROJECT_ID || "05707d35-3fe7-4e06-a68d-a8bf65688701",
+        projectId,
       }),
     );
 
     handleCloseTaskModal();
   };
 
-  const handleGenerateDescription = (title: string) => {
+  const handleGenerateDescription = (title: string, projectId: string) => {
     if (!title.trim()) return;
-    dispatch(generateTaskDescription({ title }));
+    dispatch(generateTaskDescription({ title, projectId }));
   };
+
+  if (!projectId) {
+    return (
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center text-[var(--color-text-secondary)] shadow-[var(--shadow-sm)]">
+        Open a project from the Projects page to view tasks.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -180,6 +196,15 @@ export default function TasksPage() {
         onPriorityChange={(value) => dispatch(setPriorityFilter(value))}
       />
 
+      {error ? (
+        <div
+          className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {error}
+        </div>
+      ) : null}
+
       {/* list of the task  */}
       {loading ? (
         <div className="flex items-center justify-center p-10 text-xl text-[var(--color-text-secondary)]">
@@ -207,6 +232,7 @@ export default function TasksPage() {
         <TaskForm
           initialData={editingTask}
           users={members}
+          projectId={projectId}
           loading={loading}
           aiLoading={aiLoading}
           generatedDescription={generatedDescription}

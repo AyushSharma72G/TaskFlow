@@ -5,8 +5,8 @@ import {
     IsOptional,
     IsDateString,
     IsArray,
-    ArrayNotEmpty,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 
 export class UpdateTaskDto {
@@ -27,10 +27,22 @@ export class UpdateTaskDto {
     @IsOptional()
     priority?: TaskPriority;
 
-    @IsArray()
-    // @ArrayNotEmpty()
-    @IsString({ each: true })
     @IsOptional()
+    @Transform(({ value }) => {
+        if (value === null || value === undefined) {
+            return undefined;
+        }
+
+        if (!Array.isArray(value)) {
+            return [];
+        }
+
+        return value.filter(
+            (id): id is string => typeof id === 'string' && id.trim() !== '',
+        );
+    })
+    @IsArray()
+    @IsString({ each: true })
     assigneeIds?: string[];
 
     @IsDateString()

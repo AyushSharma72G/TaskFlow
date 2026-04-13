@@ -47,6 +47,8 @@ const config = {
         process.env.AVATAR_UPLOAD_RETRY_COUNT,
         3,
     ),
+
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
 };
 
 if (config.NODE_ENV === 'production') {
