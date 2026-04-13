@@ -4,14 +4,9 @@ import ProtectedRoute from "../shared/components/guards/ProtectedRoute";
 import PublicOnlyRoute from "../shared/components/guards/PublicOnlyRoute";
 import AuthPage from "../features/auth/pages/AuthPage";
 import ProfilePage from "../features/auth/pages/ProfilePage";
-import {
-  ActivityPage,
-  DashboardPage,
-  HomePage,
-  ProjectsPage,
-  // TasksPage,
-} from "./placeholderPages";
+import { ActivityPage, DashboardPage, HomePage } from "./placeholderPages";
 import TasksPage from "../features/tasks/pages/TasksPage";
+import ProjectsPage from "../features/projects/pages/ProjectsPage";
 
 export const router = createBrowserRouter([
   {
