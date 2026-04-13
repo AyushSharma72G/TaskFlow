@@ -5,7 +5,6 @@ import {
     IsOptional,
     IsDateString,
     IsArray,
-    ArrayNotEmpty,
 } from 'class-validator';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 

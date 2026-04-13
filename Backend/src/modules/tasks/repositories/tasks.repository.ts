@@ -1,10 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import config from 'src/config/env.config';
 @Injectable()
 export class TasksRepository {
-    constructor(private readonly prisma: PrismaService) {}
+    private readonly genAI: GoogleGenerativeAI;
+
+    constructor(private readonly prisma: PrismaService) {
+        const apiKey = config.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            throw new Error('GEMINI_API_KEY is not configured');
+        }
+
+        this.genAI = new GoogleGenerativeAI(apiKey);
+    }
 
     private readonly taskInclude = {
         project: true,
@@ -60,7 +71,36 @@ export class TasksRepository {
     async findAllByProjectId(projectId: string) {
         return this.prisma.task.findMany({
             where: { projectId },
-            include: this.taskInclude,
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                priority: true,
+                dueDate: true,
+                createdAt: true,
+
+                createdBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+
+                assignees: {
+                    select: {
+                        id: true,
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+            },
             orderBy: {
                 createdAt: 'desc',
             },
@@ -136,5 +176,44 @@ export class TasksRepository {
         return this.prisma.task.delete({
             where: { id: taskId },
         });
+    }
+
+    // generate task description using Gemini
+    async generateDescription(data: { title: string }): Promise<string> {
+        const prompt = `
+You are an expert project management assistant.
+
+Generate a concise, professional, implementation-focused task description.
+
+Task details:
+- Title: ${data.title}
+
+Instructions:
+- Write 2 to 3 sentences
+- Be clear, practical, and professional
+- Describe what needs to be built or completed
+- No bullet points
+- No markdown
+- Return only the description text
+        `.trim();
+
+        try {
+            const model = this.genAI.getGenerativeModel({
+                model: 'gemini-2.5-flash',
+            });
+
+            const result = await model.generateContent(prompt);
+            const description = result.response.text()?.trim();
+            if (!description) {
+                throw new InternalServerErrorException(' ');
+            }
+
+            return description;
+        } catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException(
+                'Failed to generate task description',
+            );
+        }
     }
 }

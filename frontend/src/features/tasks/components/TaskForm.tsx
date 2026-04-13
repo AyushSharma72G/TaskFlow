@@ -6,11 +6,12 @@ import { X } from "lucide-react";
 
 interface TaskFormProps {
   initialData?: Task | null;
+  projectId: string;
   users: TaskUser[];
   loading?: boolean;
   aiLoading?: boolean;
   generatedDescription?: string;
-  onGenerateDescription?: (title: string) => void;
+  onGenerateDescription?: (title: string, projectId: string) => void;
   onClose: () => void;
   onSubmit: (data: {
     title: string;
@@ -29,6 +30,7 @@ type AssigneeOption = {
 
 export default function TaskForm({
   initialData,
+  projectId,
   users,
   loading,
   aiLoading,
@@ -37,6 +39,14 @@ export default function TaskForm({
   onClose,
   onSubmit,
 }: TaskFormProps) {
+  const getTaskAssigneeIds = (task?: Task | null): string[] => {
+    if (!task?.assignees?.length) return [];
+
+    return task.assignees
+      .map((assignee: any) => assignee.userId ?? assignee.user?.id ?? "")
+      .filter((id: string) => typeof id === "string" && id.trim() !== "");
+  };
+
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(
     initialData?.description || "",
@@ -49,7 +59,7 @@ export default function TaskForm({
   );
   const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
-    initialData?.assignees?.map((assignee) => assignee.userId) || [],
+    getTaskAssigneeIds(initialData),
   );
 
   useEffect(() => {
@@ -64,35 +74,37 @@ export default function TaskForm({
     setStatus(initialData?.status || "TODO");
     setPriority(initialData?.priority || "MEDIUM");
     setDueDate(initialData?.dueDate || "");
-    setAssigneeIds(
-      initialData?.assignees?.map((assignee) => assignee.userId) || [],
-    );
+    setAssigneeIds(getTaskAssigneeIds(initialData));
   }, [initialData]);
 
   const assigneeOptions = useMemo<AssigneeOption[]>(
     () =>
-      users.map((member) => ({
-        value: member.userId,
-        label: `${member.user.name} (${member.user.email})`,
+      users.map((member: any) => ({
+        value: member.userId ?? member.user?.id ?? "",
+        label: `${member.user?.name ?? "Unknown"} (${member.user?.email ?? "No email"})`,
       })),
     [users],
   );
 
-  const selectedAssignees = useMemo(
-    () =>
-      assigneeOptions.filter((option) => assigneeIds.includes(option.value)),
-    [assigneeOptions, assigneeIds],
-  );
+  const selectedAssignees = useMemo(() => {
+    return assigneeOptions.filter((option) =>
+      assigneeIds.includes(option.value),
+    );
+  }, [assigneeOptions, assigneeIds]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const cleanedAssigneeIds = assigneeIds.filter(
+      (id): id is string => typeof id === "string" && id.trim() !== "",
+    );
 
     onSubmit({
       title,
       description,
       status,
       priority,
-      assigneeIds,
+      assigneeIds: cleanedAssigneeIds,
       dueDate: dueDate || null,
     });
   };
@@ -144,7 +156,7 @@ export default function TaskForm({
 
           <GenerateDescriptionButton
             loading={aiLoading}
-            onClick={() => onGenerateDescription?.(title)}
+            onClick={() => onGenerateDescription?.(title, projectId)}
           />
 
           <div>
@@ -157,11 +169,7 @@ export default function TaskForm({
               options={assigneeOptions}
               value={selectedAssignees}
               onChange={(selectedOptions) =>
-                setAssigneeIds(
-                  selectedOptions
-                    ? selectedOptions.map((option) => option.value)
-                    : [],
-                )
+                setAssigneeIds(selectedOptions.map((option) => option.value))
               }
               placeholder="Select assignees..."
               classNamePrefix="react-select"

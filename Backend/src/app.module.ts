@@ -8,8 +8,14 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { ActivityLogModule } from './modules/activity_log/activity-log.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ProjectsModule ,TasksModule, ActivityLogModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        PrismaModule,
+        AuthModule,
+        ProjectsModule,
+        TasksModule,
+        ActivityLogModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}

@@ -8,6 +8,7 @@ import { TasksRepository } from '../repositories/tasks.repository';
 import { TaskBusinessValidator } from '../validators/task-business.validator';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
+import { AiDescriptionDto } from '../dto/ai-description.dto';
 import { TASK_MESSAGES } from '../constants/task-messages.constant';
 import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
 import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
@@ -95,7 +96,6 @@ export class TasksService {
                 task?.assignees.map((assignment) => assignment.user) ?? [],
         };
     }
-
     async updateTask(
         taskId: string,
         updateTaskDto: UpdateTaskDto,
@@ -110,7 +110,7 @@ export class TasksService {
             throw new BadRequestException(TASK_MESSAGES.NO_FIELDS_TO_UPDATE);
         }
 
-        if (updateTaskDto.assigneeIds !== undefined) {
+        if (updateTaskDto.assigneeIds && updateTaskDto.assigneeIds.length > 0) {
             await this.taskBusinessValidator.validateAssigneesInProject({
                 projectId: task.projectId,
                 assigneeIds: updateTaskDto.assigneeIds,
@@ -155,7 +155,6 @@ export class TasksService {
             updateData,
         );
 
-        //logging task update
         if (
             updateTaskDto.status !== undefined &&
             updateTaskDto.status !== task.status
@@ -192,5 +191,24 @@ export class TasksService {
         });
 
         return { message: TASK_MESSAGES.TASK_DELETED_SUCCESSFULLY };
+    }
+
+    // generate task description
+    async generateTaskDescription(
+        userId: string,
+        aiDescriptionDto: AiDescriptionDto,
+    ) {
+        // validate user is member of project
+        await this.taskBusinessValidator.validateProjectAccess({
+            projectId: aiDescriptionDto.projectId,
+            userId,
+        });
+
+        //  generate description
+        const description = await this.tasksRepository.generateDescription({
+            title: aiDescriptionDto.title,
+        });
+
+        return { description };
     }
 }
