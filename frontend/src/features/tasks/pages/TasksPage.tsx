@@ -25,6 +25,8 @@ import {
   clearTasksError,
   setPriorityFilter,
   setAssignedToFilter,
+  setTaskStatusOptimistic,
+  revertTaskStatus,
   setStatusFilter,
 } from "../store/tasksSlice";
 
@@ -225,6 +227,23 @@ export default function TasksPage() {
           tasks={tasks}
           onEdit={handleEditTask}
           onDelete={(taskId) => dispatch(deleteTask(taskId))}
+          onStatusChange={(taskId, status) => {
+            const previousTask = tasks.find((t) => t.id === taskId);
+            if (!previousTask) return;
+
+            dispatch(setTaskStatusOptimistic({ taskId, status }));
+
+            dispatch(updateTask({ taskId, payload: { status } })) // api call
+              .unwrap()
+              .catch(() => {
+                dispatch(
+                  revertTaskStatus({
+                    taskId,
+                    previousStatus: previousTask.status,
+                  }),
+                );
+              });
+          }}
         />
       )}
 

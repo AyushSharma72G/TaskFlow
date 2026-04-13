@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Task, TaskFilters, TaskUser } from "../types";
+import type { Task, TaskFilters, TaskUser, TaskStatus } from "../types";
 import {
   createTask,
   deleteTask,
@@ -61,6 +61,25 @@ const tasksSlice = createSlice({
     clearTasksError(state) {
       state.error = null;
     },
+
+    setTaskStatusOptimistic(
+      state,
+      action: PayloadAction<{ taskId: string; status: TaskStatus }>,
+    ) {
+      const task = state.tasks.find((t) => t.id === action.payload.taskId);
+      if (task) {
+        task.status = action.payload.status;
+      }
+    },
+    revertTaskStatus(
+      state,
+      action: PayloadAction<{ taskId: string; previousStatus: TaskStatus }>,
+    ) {
+      const task = state.tasks.find((t) => t.id === action.payload.taskId);
+      if (task) {
+        task.status = action.payload.previousStatus;
+      }
+    },
   },
 
   extraReducers: (builder) => {
@@ -95,11 +114,11 @@ const tasksSlice = createSlice({
 
       // updateTask
       .addCase(updateTask.pending, (state) => {
-        state.loading = true;
+        // state.loading = true;
         state.error = null;
       })
       .addCase(updateTask.fulfilled, (state, action: PayloadAction<Task>) => {
-        state.loading = false;
+        // state.loading = false;
         state.tasks = state.tasks.map((task) =>
           task.id === action.payload.id ? action.payload : task,
         );
@@ -169,6 +188,8 @@ export const {
   setAssignedToFilter,
   clearGeneratedDescription,
   clearTasksError,
+  setTaskStatusOptimistic,
+  revertTaskStatus,
 } = tasksSlice.actions;
 
 export default tasksSlice.reducer;
