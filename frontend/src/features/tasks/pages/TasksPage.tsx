@@ -49,7 +49,6 @@ type TaskFormData = {
 export default function TasksPage() {
   const { id: projectId } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
-
   const tasks = useAppSelector(selectFilteredTasks);
   const members = useAppSelector(selectProjectMembers);
   const loading = useAppSelector(selectTasksLoading);
@@ -133,9 +132,9 @@ export default function TasksPage() {
     handleCloseTaskModal();
   };
 
-  const handleGenerateDescription = (title: string) => {
+  const handleGenerateDescription = (title: string, projectId: string) => {
     if (!title.trim()) return;
-    dispatch(generateTaskDescription({ title }));
+    dispatch(generateTaskDescription({ title, projectId }));
   };
 
   if (!projectId) {
@@ -233,6 +232,7 @@ export default function TasksPage() {
         <TaskForm
           initialData={editingTask}
           users={members}
+          projectId={projectId}
           loading={loading}
           aiLoading={aiLoading}
           generatedDescription={generatedDescription}

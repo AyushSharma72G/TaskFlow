@@ -28,6 +28,8 @@ const config = {
     GITHUB_CALLBACK_URL:
         process.env.GITHUB_CALLBACK_URL ??
         'http://localhost:3000/api/auth/github/callback',
+
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
 };
 
 if (config.NODE_ENV === 'production') {
