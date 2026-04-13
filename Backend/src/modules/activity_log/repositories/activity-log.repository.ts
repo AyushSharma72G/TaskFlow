@@ -22,18 +22,12 @@ export class ActivityLogRepository {
   async findAllForUser(userId: string, query: QueryActivityLogDto) {
     const { projectId, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
-    // Only return logs for projects the user belongs to
-    const where: any = {
+    const where: Prisma.ActivityLogWhereInput = {
       project: {
-        members: {
-          some: { userId },
-        },
+        members: { some: { userId } },
       },
+      ...(projectId && { projectId }),
     };
-
-    if (projectId) {
-      where.projectId = projectId;
-    }
 
     const [logs, total] = await Promise.all([
       this.prisma.activityLog.findMany({

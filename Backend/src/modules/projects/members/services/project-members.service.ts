@@ -10,12 +10,13 @@ import { InviteMemberDto } from '../dto/invite-member.dto';
 import { UpdateMemberRoleDto } from '../dto/update-member-role.dto';
 import { ProjectMemberWithUser } from '../../repositories/projects.repository';
 import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
-import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
+import { MemberInvitedEvent } from 'src/modules/activity_log/events/activity-log.events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ProjectMembersService {
     constructor(private readonly repo: ProjectsRepository,
-        private readonly activityLogService: ActivityLogService) {}
+        private readonly eventEmitter: EventEmitter2,) {}
 
     async invite(
         userId: string,
@@ -42,15 +43,8 @@ export class ProjectMembersService {
 
         const member = await this.repo.addMember(projectId, user.id);
 
-        await this.activityLogService.log({
-            action: ActivityAction.MEMBER_INVITED,
-            detail: {
-                invitedEmail: dto.email,
-                invitedUserName: invitedUser.name,
-            },
-            projectId,
-            userId,
-        });
+        const event = new MemberInvitedEvent(projectId, userId, { invitedEmail: invitedUser.email, invitedUserName: invitedUser.name }  );
+this.eventEmitter.emit(ActivityAction.MEMBER_INVITED, event);
 
         return member;
     }

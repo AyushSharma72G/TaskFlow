@@ -7,7 +7,7 @@ export class CreateActivityLogDto {
 
   @IsOptional()
   @IsString()
-  detail?: Prisma.InputJsonValue;
+  detail?: Record<string, any>;
 
   @IsUUID()
   projectId: string;

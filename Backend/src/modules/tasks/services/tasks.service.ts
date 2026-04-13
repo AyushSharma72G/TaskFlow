@@ -9,15 +9,16 @@ import { TaskBusinessValidator } from '../validators/task-business.validator';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
 import { TASK_MESSAGES } from '../constants/task-messages.constant';
-import { ActivityLogService } from 'src/modules/activity_log/services/activity-log.service';
 import { ActivityAction } from 'src/modules/activity_log/constants/activity-action';
+import { TaskCreatedEvent, TaskDeletedEvent, TaskStatusChangedEvent } from 'src/modules/activity_log/events/activity-log.events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class TasksService {
     constructor(
         private readonly tasksRepository: TasksRepository,
         private readonly taskBusinessValidator: TaskBusinessValidator,
-        private readonly activityLogService: ActivityLogService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     async createTask(createTaskDto: CreateTaskDto, currentUserId: string) {
@@ -41,17 +42,15 @@ export class TasksService {
         });
 
         //logging task creation
-        await this.activityLogService.log({
-            action: ActivityAction.TASK_CREATED,
-            detail: {
+        const event = new TaskCreatedEvent(
+            createdTask.projectId,
+            currentUserId,
+            {
                 taskTitle: createdTask.title,
-                assigneeIds: createdTask.assignees.map(
-                    (assignee) => assignee.userId,
-                ),
+                assigneeIds: createTaskDto.assigneeIds ?? [],
             },
-            projectId: createdTask.projectId,
-            userId: createdTask.createdById,
-        });
+        );
+        this.eventEmitter.emit(ActivityAction.TASK_CREATED, event);
 
         return createdTask;
     }
@@ -160,16 +159,12 @@ export class TasksService {
             updateTaskDto.status !== undefined &&
             updateTaskDto.status !== task.status
         ) {
-            this.activityLogService.log({
-                action: ActivityAction.TASK_STATUS_CHANGED,
-                detail: {
-                    taskTitle: task.title,
-                    from: task.status,
-                    to: updateTaskDto.status,
-                },
-                projectId: task.projectId,
-                userId: currentUserId,
+            const event = new TaskStatusChangedEvent(task.projectId, currentUserId, {
+                taskTitle: task.title,
+                from: task.status,
+                to: updateTaskDto.status,
             });
+            this.eventEmitter.emit(ActivityAction.TASK_STATUS_CHANGED, event);
         }
 
         return updatedTask;
@@ -184,12 +179,8 @@ export class TasksService {
         await this.tasksRepository.delete(taskId);
 
         //logging task deletion
-        this.activityLogService.log({
-            action: ActivityAction.TASK_DELETED,
-            detail: { taskTitle: task.title },
-            projectId: task.projectId,
-            userId: currentUserId,
-        });
+        const event = new TaskDeletedEvent(task.projectId, currentUserId, { taskTitle: task.title } );
+        this.eventEmitter.emit(ActivityAction.TASK_DELETED, event);
 
         return { message: TASK_MESSAGES.TASK_DELETED_SUCCESSFULLY };
     }
