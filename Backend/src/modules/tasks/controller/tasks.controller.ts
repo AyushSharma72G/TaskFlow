@@ -82,8 +82,8 @@ export class TasksController {
     @HttpCode(HttpStatus.OK)
     async generateTaskDescription(
         @Body() aiDescriptionDto: AiDescriptionDto,
-        @Req() req: any,
+        @Req() req: AuthRequest,
     ) {
-        return this.tasksService.generateTaskDescription(aiDescriptionDto);
+        return this.tasksService.generateTaskDescription(req.user.id,aiDescriptionDto);
     }
 }

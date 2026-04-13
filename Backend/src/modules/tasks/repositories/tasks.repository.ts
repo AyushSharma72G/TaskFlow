@@ -1,18 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
+import config from 'src/config/env.config';
 @Injectable()
 export class TasksRepository {
     private readonly genAI: GoogleGenerativeAI;
 
-    constructor(
-        private readonly prisma: PrismaService,
-        private readonly configService: ConfigService,
-    ) {
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    constructor(private readonly prisma: PrismaService) {
+        const apiKey = config.GEMINI_API_KEY;
 
         if (!apiKey) {
             throw new Error('GEMINI_API_KEY is not configured');
@@ -208,14 +204,14 @@ Instructions:
 
             const result = await model.generateContent(prompt);
             const description = result.response.text()?.trim();
-
             if (!description) {
-                throw new InternalServerErrorException(' ');
+                throw new InternalServerErrorException(
+                    ' ',
+                );
             }
 
             return description;
         } catch (error) {
-            console.log(error);
             throw new InternalServerErrorException(
                 'Failed to generate task description',
             );

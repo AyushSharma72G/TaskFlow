@@ -123,9 +123,9 @@ export default function TasksPage() {
     handleCloseTaskModal();
   };
 
-  const handleGenerateDescription = (title: string) => {
+  const handleGenerateDescription = (title: string, CURRENT_PROJECT_ID: string) => {
     if (!title.trim()) return;
-    dispatch(generateTaskDescription({ title }));
+    dispatch(generateTaskDescription({ title, CURRENT_PROJECT_ID }));
   };
 
   return (

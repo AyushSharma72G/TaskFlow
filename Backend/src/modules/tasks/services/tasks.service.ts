@@ -196,10 +196,21 @@ export class TasksService {
     }
 
     // generate task description
-    async generateTaskDescription(aiDescriptionDto: AiDescriptionDto) {
+    async generateTaskDescription(
+        userId: string,
+        aiDescriptionDto: AiDescriptionDto,
+    ) {
+        // validate user is member of project
+        await this.taskBusinessValidator.validateProjectAccess({
+            projectId: aiDescriptionDto.projectId,
+            userId,
+        });
+
+        //  generate description
         const description = await this.tasksRepository.generateDescription({
             title: aiDescriptionDto.title,
         });
+
         return { description };
     }
 }
