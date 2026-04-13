@@ -9,11 +9,13 @@ import {
     Get,
     Param,
     Patch,
+    Query,
     Delete,
 } from '@nestjs/common';
 import { TasksService } from '../services/tasks.service';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
+import { GetTasksQueryDto } from '../dto/get-tasks-query.dto';
 import { AiDescriptionDto } from '../dto/ai-description.dto';
 import { JwtCookieAuthGuard } from 'src/common/guards';
 import type { AuthRequest } from 'src/common/guards';
@@ -36,9 +38,15 @@ export class TasksController {
     @HttpCode(HttpStatus.OK)
     async getTasksByProject(
         @Param('projectId') projectId: string,
+        @Query() query: GetTasksQueryDto,
         @Req() req: any,
     ) {
-        return this.tasksService.getTasksByProject(projectId, req.user.id);
+        return this.tasksService.getTasksByProject(
+            projectId,
+            req.user.id,
+            query.cursor,
+            query.limit,
+        );
     }
 
     // get a single task by id
@@ -84,6 +92,9 @@ export class TasksController {
         @Body() aiDescriptionDto: AiDescriptionDto,
         @Req() req: AuthRequest,
     ) {
-        return this.tasksService.generateTaskDescription(req.user.id,aiDescriptionDto);
+        return this.tasksService.generateTaskDescription(
+            req.user.id,
+            aiDescriptionDto,
+        );
     }
 }

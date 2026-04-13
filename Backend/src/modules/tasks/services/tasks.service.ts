@@ -57,13 +57,22 @@ export class TasksService {
         return createdTask;
     }
 
-    async getTasksByProject(projectId: string, currentUserId: string) {
+    async getTasksByProject(
+        projectId: string,
+        currentUserId: string,
+        cursor?: string,
+        limit?: number,
+    ) {
         await this.taskBusinessValidator.validateProjectAccess({
             projectId,
             userId: currentUserId,
         });
 
-        return this.tasksRepository.findAllByProjectId(projectId);
+        return this.tasksRepository.findAllByProjectId(
+            projectId,
+            cursor,
+            limit,
+        );
     }
 
     async getTaskById(taskId: string, currentUserId: string) {

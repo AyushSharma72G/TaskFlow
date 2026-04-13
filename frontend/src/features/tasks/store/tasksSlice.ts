@@ -12,6 +12,9 @@ import {
 interface TasksState {
   tasks: Task[];
   members: TaskUser[];
+  nextCursor: string | null; // for pagination
+  hasNextPage: boolean;
+  loadingMore: boolean;
   selectedTask: Task | null;
   loading: boolean;
   error: string | null;
@@ -24,6 +27,9 @@ const initialState: TasksState = {
   tasks: [],
   members: [],
   selectedTask: null,
+  nextCursor: null,
+  hasNextPage: false,
+  loadingMore: false,
   loading: false,
   error: null,
   aiLoading: false,
@@ -85,16 +91,32 @@ const tasksSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // fetchTasks
-      .addCase(fetchTasks.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchTasks.pending, (state, action) => {
+        if (action.meta.arg.cursor) {
+          state.loadingMore = true;
+        } else {
+          state.loading = true;
+          state.tasks = [];
+        }
         state.error = null;
       })
-      .addCase(fetchTasks.fulfilled, (state, action: PayloadAction<Task[]>) => {
+      .addCase(fetchTasks.fulfilled, (state, action) => {
+        const { items, nextCursor, hasNextPage } = action.payload;
+
+        if (action.meta.arg.cursor) {  // this is meta data by the redux thunk to know if we did the used the cursor or not 
+          state.tasks.push(...items); // append on paginate
+        } else {
+          state.tasks = items;
+        }
+
+        state.nextCursor = nextCursor;
+        state.hasNextPage = hasNextPage;
         state.loading = false;
-        state.tasks = action.payload;
+        state.loadingMore = false;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
+        state.loadingMore = false;
         state.error = (action.payload as string) || "Something went wrong";
       })
 

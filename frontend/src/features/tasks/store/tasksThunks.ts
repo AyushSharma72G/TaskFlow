@@ -6,16 +6,18 @@ import type {
   Task,
   TaskUser,
   UpdateTaskPayload,
+  PaginatedTasksResponse,
+  FetchTasksPayload,
 } from "../types";
 import { taskAiApi } from "../api/taskAi.api";
 
 export const fetchTasks = createAsyncThunk<
-  Task[],
-  string,
+  PaginatedTasksResponse,
+  FetchTasksPayload,
   { rejectValue: string }
->("tasks/fetchTasks", async (projectId, thunkAPI) => {
+>("tasks/fetchTasks", async ({ projectId, cursor }, thunkAPI) => {
   try {
-    return await tasksApi.getTasks(projectId);
+    return await tasksApi.getTasks(projectId, cursor);
   } catch (error: any) {
     return thunkAPI.rejectWithValue(
       error?.response?.data?.message || "Failed to fetch tasks",

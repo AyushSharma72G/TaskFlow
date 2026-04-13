@@ -3,6 +3,11 @@ import type { RootState } from "../../../store";
 
 export const selectTasksState = (state: RootState) => state.tasks;
 
+// tasksSelectors.ts — add these
+export const selectNextCursor = (state: RootState) => state.tasks.nextCursor;
+export const selectHasNextPage = (state: RootState) => state.tasks.hasNextPage;
+export const selectLoadingMore = (state: RootState) => state.tasks.loadingMore;
+
 export const selectTasksLoading = (state: RootState) => state.tasks.loading;
 export const selectTasksError = (state: RootState) => state.tasks.error;
 export const selectSelectedTask = (state: RootState) =>
@@ -25,15 +30,10 @@ export const selectFilteredTasks = (state: RootState) => {
 
     const matchesAssignee =
       filters.assigneeId === "ALL" ||
-      task.assignees.some((assignee) => assignee.id === filters.assigneeId);
+      task.assignees.some(
+        (assignee) => assignee.user.id === filters.assigneeId,
+      );
 
-    const search = filters.search?.trim().toLowerCase() || "";
-
-    const matchesSearch =
-      !search ||
-      task.title.toLowerCase().includes(search) ||
-      (task.description || "").toLowerCase().includes(search);
-
-    return matchesStatus && matchesPriority && matchesAssignee && matchesSearch;
+    return matchesStatus && matchesPriority && matchesAssignee;
   });
 };
