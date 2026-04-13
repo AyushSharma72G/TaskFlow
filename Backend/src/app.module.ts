@@ -6,9 +6,11 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { ActivityLogModule } from './modules/activity_log/activity-log.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
     imports: [
+        EventEmitterModule.forRoot(),
         PrismaModule,
         AuthModule,
         ProjectsModule,
