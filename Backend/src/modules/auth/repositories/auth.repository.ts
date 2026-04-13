@@ -125,6 +125,16 @@ export class AuthRepository {
             select: safeUserSelect,
         })) as SafeUser;
     }
+    async updateAvatarUrl(
+        id: string,
+        avatarUrl: string | null,
+    ): Promise<SafeUser> {
+        return (await this.prisma.user.update({
+            where: { id },
+            data: { avatarUrl },
+            select: safeUserSelect,
+        })) as SafeUser;
+    }
     async updatePassword(id: string, password: string): Promise<void> {
         await this.prisma.user.update({
             where: { id },

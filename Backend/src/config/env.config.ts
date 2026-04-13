@@ -1,6 +1,15 @@
 import 'dotenv/config';
 
 const DEFAULT_DEV_SECRET = 'dev_secret_change_me';
+const DEFAULT_AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+
+function parsePositiveNumber(
+    value: string | undefined,
+    fallback: number,
+): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 const config = {
     PORT: Number(process.env.PORT ?? 3000),
@@ -28,6 +37,16 @@ const config = {
     GITHUB_CALLBACK_URL:
         process.env.GITHUB_CALLBACK_URL ??
         'http://localhost:3000/api/auth/github/callback',
+    AVATAR_FOLDER: process.env.AVATAR_FOLDER ?? 'avatars/users',
+    AVATAR_TEMP_DIR: process.env.AVATAR_TEMP_DIR ?? 'tmp/avatars',
+    AVATAR_MAX_SIZE_BYTES: parsePositiveNumber(
+        process.env.AVATAR_MAX_SIZE_BYTES,
+        DEFAULT_AVATAR_MAX_SIZE_BYTES,
+    ),
+    AVATAR_UPLOAD_RETRY_COUNT: parsePositiveNumber(
+        process.env.AVATAR_UPLOAD_RETRY_COUNT,
+        3,
+    ),
 };
 
 if (config.NODE_ENV === 'production') {

@@ -37,7 +37,7 @@ prisma/*.db-journal
 
 # NestJS
 dist/
-.tmp/
+tmp/
 .cache/
 
 # TypeScript

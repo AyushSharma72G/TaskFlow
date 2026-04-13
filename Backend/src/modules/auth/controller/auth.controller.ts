@@ -2,19 +2,24 @@ import {
     BadRequestException,
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     Patch,
     Post,
     Query,
     UnauthorizedException,
+    UploadedFile,
     Req,
     Res,
     UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { JwtCookieAuthGuard, type AuthRequest } from '../../../common/guards';
+import { AvatarUploadInterceptor } from '../../../common/interceptors';
+import { avatarFileValidationPipe } from '../../../common/pipes';
 import {
     ChangePasswordDto,
     LoginDto,
@@ -160,6 +165,40 @@ export class AuthController {
             data: user,
         };
     }
+
+    @Patch('profile/avatar')
+    @UseGuards(JwtCookieAuthGuard)
+    @UseInterceptors(AvatarUploadInterceptor)
+    async uploadAvatar(
+        @Req() request: AuthRequest,
+        @UploadedFile(avatarFileValidationPipe)
+        file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException(AUTH_MESSAGES.errors.avatarRequired);
+        }
+
+        const user = await this.authService.uploadAvatar(request.user.id, file);
+
+        return {
+            success: true,
+            message: AUTH_MESSAGES.success.avatarUploaded,
+            data: user,
+        };
+    }
+
+    @Delete('profile/avatar')
+    @UseGuards(JwtCookieAuthGuard)
+    async removeAvatar(@Req() request: AuthRequest) {
+        const user = await this.authService.removeAvatar(request.user.id);
+
+        return {
+            success: true,
+            message: AUTH_MESSAGES.success.avatarRemoved,
+            data: user,
+        };
+    }
+
     @Patch('change-password')
     @UseGuards(JwtCookieAuthGuard)
     async changePassword(
@@ -189,7 +228,10 @@ export class AuthController {
             maxAge: 10 * 60 * 1000,
         });
 
-        const redirectUrl = this.authService.initiateOAuth(provider, oauthState);
+        const redirectUrl = this.authService.initiateOAuth(
+            provider,
+            oauthState,
+        );
         return response.redirect(redirectUrl);
     }
 
