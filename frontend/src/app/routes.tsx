@@ -3,11 +3,17 @@ import { AppLayout } from "../shared/components/layout/AppLayout";
 import ProtectedRoute from "../shared/components/guards/ProtectedRoute";
 import PublicOnlyRoute from "../shared/components/guards/PublicOnlyRoute";
 import AuthPage from "../features/auth/pages/AuthPage";
-import ProfilePage from "../features/auth/pages/ProfilePage";
-import { DashboardPage, HomePage } from "./placeholderPages";
-import TasksPage from "../features/tasks/pages/TasksPage";
-import ProjectsPage from "../features/projects/pages/ProjectsPage";
-import ActivityPage from "../features/activity/pages/ActivityPage";
+import HomePage from "../features/home/pages/HomePage";
+import { lazy, Suspense } from "react";
+import NotFoundPage from "../shared/pages/NotFound";
+import Loader from "../shared/components/Loader";
+
+const DashboardPage = lazy(()=>import('../features/dashboard/pages/DashboardPage'));
+const ProjectsPage = lazy(()=>import('../features/projects/pages/ProjectsPage'));
+const TasksPage = lazy(()=>import('../features/tasks/pages/TasksPage'));
+const ActivityPage = lazy(()=>import('../features/activity/pages/ActivityPage'));
+const ProfilePage = lazy(()=>import('../features/auth/pages/ProfilePage'));
+
 
 export const router = createBrowserRouter([
   {
@@ -32,23 +38,43 @@ export const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <DashboardPage />,
+        element: (
+          <Suspense fallback={<Loader/>}>
+            <DashboardPage />
+          </Suspense>
+        ),
       },
       {
         path: "projects",
-        element: <ProjectsPage />,
+        element:(
+          <Suspense fallback={<Loader/>}>
+            <ProjectsPage />
+          </Suspense>
+        ),
       },
       {
         path: "project/:id",
-        element: <TasksPage />,
+        element: (
+          <Suspense fallback={<Loader/>}>
+            <TasksPage />
+          </Suspense>
+        ),
       },
       {
         path: "activity",
-        element: <ActivityPage />,
+        element: (
+          <Suspense fallback={<Loader/>}>
+            <ActivityPage />
+          </Suspense>
+        ),
       },
       {
         path: "profile",
-        element: <ProfilePage />,
+        element: (
+          <Suspense fallback={<Loader/>}>
+            <ProfilePage />
+          </Suspense>
+        ),
       },
       {
         path: "",
@@ -56,4 +82,10 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path:'*',
+    element:(
+      <NotFoundPage/>
+    )
+  }
 ]);
