@@ -28,7 +28,10 @@ export interface RegisterPayload {
 
 export interface UpdateProfilePayload {
   name?: string;
-  avatarUrl?: string;
+}
+
+export interface UploadAvatarPayload {
+  avatar: File;
 }
 
 export interface ChangePasswordPayload {

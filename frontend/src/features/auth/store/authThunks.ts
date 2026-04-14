@@ -4,6 +4,7 @@ import type {
   ChangePasswordPayload,
   LoginPayload,
   RegisterPayload,
+  UploadAvatarPayload,
   UpdateProfilePayload,
 } from "../types";
 
@@ -109,6 +110,32 @@ export const changePasswordThunk = createAsyncThunk(
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
         getErrorMessage(error, "Failed to change password"),
+      );
+    }
+  },
+);
+
+export const uploadAvatarThunk = createAsyncThunk(
+  "auth/uploadAvatar",
+  async (payload: UploadAvatarPayload, thunkAPI) => {
+    try {
+      return await authApi.uploadAvatar(payload);
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        getErrorMessage(error, "Failed to upload avatar"),
+      );
+    }
+  },
+);
+
+export const removeAvatarThunk = createAsyncThunk(
+  "auth/removeAvatar",
+  async (_, thunkAPI) => {
+    try {
+      return await authApi.removeAvatar();
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        getErrorMessage(error, "Failed to remove avatar"),
       );
     }
   },

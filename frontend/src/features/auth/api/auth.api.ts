@@ -6,6 +6,7 @@ import type {
   LoginPayload,
   ProjectRoleData,
   RegisterPayload,
+  UploadAvatarPayload,
   UpdateProfilePayload,
 } from "../types";
 
@@ -35,6 +36,27 @@ export const authApi = {
 
   async updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
     const response = await api.patch<AuthApiResponse<AuthUser>>("/auth/profile", payload);
+    return response.data.data;
+  },
+
+  async uploadAvatar(payload: UploadAvatarPayload): Promise<AuthUser> {
+    const formData = new FormData();
+    formData.append("avatar", payload.avatar);
+
+    const response = await api.patch<AuthApiResponse<AuthUser>>(
+      "/auth/profile/avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return response.data.data;
+  },
+
+  async removeAvatar(): Promise<AuthUser> {
+    const response = await api.delete<AuthApiResponse<AuthUser>>("/auth/profile/avatar");
     return response.data.data;
   },
 

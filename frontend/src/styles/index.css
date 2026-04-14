@@ -87,6 +87,23 @@
 .priority-high {
   @apply bg-red-50 text-red-700 border-red-100;
 }
+
+.feedback-banner {
+  @apply rounded-md border px-3 py-2 text-sm;
+}
+
+.feedback-banner-success {
+  @apply border-success/35 bg-success/10 text-text-primary;
+}
+
+.feedback-banner-error {
+  @apply border-danger/35 bg-danger/10 text-danger;
+}
+
+.feedback-banner-info {
+  @apply border-border bg-muted text-text-primary;
+}
+
 :root {
   --gradient-primary: linear-gradient(135deg, rgb(37 99 235), rgb(14 165 233));
 }

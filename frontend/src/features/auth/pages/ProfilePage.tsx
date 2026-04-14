@@ -1,24 +1,55 @@
 import { useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import {
-  selectAuthError,
-  selectAuthStatus,
+  selectBootstrapStatus,
   selectAuthUser,
 } from "../store/authSelectors";
 import { clearAuthError } from "../store/authSlice";
-import { changePasswordThunk, updateProfileThunk } from "../store/authThunks";
+import {
+  changePasswordThunk,
+  removeAvatarThunk,
+  updateProfileThunk,
+  uploadAvatarThunk,
+} from "../store/authThunks";
 import ProfileForm from "../components/ProfileForm";
 import ChangePasswordForm from "../components/ChangePasswordForm";
+import Loader from "../../../shared/components/Loader";
+
+type FeedbackState = {
+  tone: "success" | "error" | "info";
+  message: string;
+};
+
+const formatDateLabel = (value?: string): string => {
+  if (!value) {
+    return "Unavailable";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Unavailable";
+  }
+
+  return parsed.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+};
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectAuthUser);
-  const status = useAppSelector(selectAuthStatus);
-  const error = useAppSelector(selectAuthError);
-  const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const bootstrapStatus = useAppSelector(selectBootstrapStatus);
 
-  const isLoading = status === "loading";
+  const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const isBootstrapping = bootstrapStatus === "loading";
 
   const avatar = useMemo(() => {
     return (
@@ -27,29 +58,85 @@ export default function ProfilePage() {
     );
   }, [user?.avatarUrl]);
 
+  const username = useMemo(() => {
+    if (!user?.email) {
+      return "@user";
+    }
+
+    const [localPart] = user.email.split("@");
+    const sanitized = localPart?.replace(/[^a-zA-Z0-9._-]/g, "");
+
+    return sanitized ? `@${sanitized.toLowerCase()}` : "@user";
+  }, [user?.email]);
+
+  const clearMessages = () => {
+    setFeedback(null);
+    dispatch(clearAuthError());
+  };
+
+  const parseThunkError = (result: { payload?: unknown }) => {
+    const payload = result.payload;
+    return typeof payload === "string" && payload.trim()
+      ? payload
+      : "Something went wrong. Please try again.";
+  };
+
+  if (isBootstrapping) {
+    return <Loader />;
+  }
+
   if (!user) {
     return (
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-text-primary">Profile</h1>
-        <p className="mt-2 text-sm text-text-secondary">Unable to load user profile.</p>
+        <p className="mt-2 text-sm text-text-secondary">Unable to load account details right now.</p>
       </div>
     );
   }
 
-  const clearMessages = () => {
-    setSuccessMessage(null);
-    dispatch(clearAuthError());
+  const handleUpdateProfile = async (payload: { name?: string }) => {
+    clearMessages();
+
+    setIsSavingProfile(true);
+    const result = await dispatch(updateProfileThunk(payload));
+    setIsSavingProfile(false);
+
+    if (updateProfileThunk.fulfilled.match(result)) {
+      setFeedback({ tone: "success", message: "Profile details updated." });
+      return;
+    }
+
+    setFeedback({ tone: "error", message: parseThunkError(result) });
   };
 
-  const handleUpdateProfile = async (payload: {
-    name?: string;
-    avatarUrl?: string;
-  }) => {
+  const handleAvatarUpload = async (avatarFile: File) => {
     clearMessages();
-    const result = await dispatch(updateProfileThunk(payload));
-    if (updateProfileThunk.fulfilled.match(result)) {
-      setSuccessMessage("Profile updated successfully.");
+
+    setIsUploadingAvatar(true);
+    const result = await dispatch(uploadAvatarThunk({ avatar: avatarFile }));
+    setIsUploadingAvatar(false);
+
+    if (uploadAvatarThunk.fulfilled.match(result)) {
+      setFeedback({ tone: "success", message: "Avatar updated." });
+      return;
     }
+
+    setFeedback({ tone: "error", message: parseThunkError(result) });
+  };
+
+  const handleAvatarRemove = async () => {
+    clearMessages();
+
+    setIsRemovingAvatar(true);
+    const result = await dispatch(removeAvatarThunk());
+    setIsRemovingAvatar(false);
+
+    if (removeAvatarThunk.fulfilled.match(result)) {
+      setFeedback({ tone: "info", message: "Avatar removed." });
+      return;
+    }
+
+    setFeedback({ tone: "error", message: parseThunkError(result) });
   };
 
   const handleChangePassword = async (payload: {
@@ -57,20 +144,40 @@ export default function ProfilePage() {
     newPassword: string;
   }) => {
     clearMessages();
+
+    setIsChangingPassword(true);
     const result = await dispatch(changePasswordThunk(payload));
+    setIsChangingPassword(false);
+
     if (changePasswordThunk.fulfilled.match(result)) {
-      setSuccessMessage("Password changed successfully.");
+      setFeedback({ tone: "success", message: "Password changed successfully." });
+      return;
     }
+
+    setFeedback({ tone: "error", message: parseThunkError(result) });
   };
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <img src={avatar} alt={user.name} className="h-16 w-16 rounded-full object-cover" />
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">My Profile</h1>
-            <p className="text-sm text-text-secondary">{user.email}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <img src={avatar} alt={user.name} className="h-16 w-16 rounded-full object-cover" />
+            <div>
+              <h1 className="text-2xl font-bold text-text-primary">My Profile</h1>
+              <p className="text-sm text-text-secondary">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface-hover px-4 py-3 text-sm">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-text-muted">Username</p>
+              <p className="mt-1 font-semibold text-text-primary">{username}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-text-muted">Member Since</p>
+              <p className="mt-1 font-semibold text-text-primary">{formatDateLabel(user.createdAt)}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -89,7 +196,7 @@ export default function ProfilePage() {
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            Update Profile
+            Edit Profile
           </button>
           <button
             type="button"
@@ -107,22 +214,24 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {successMessage ? (
-          <div className="mb-4 rounded-md border border-success/35 bg-success/10 px-3 py-2 text-sm text-text-primary">
-            {successMessage}
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="mb-4 rounded-md border border-danger/35 bg-danger/10 px-3 py-2 text-sm text-danger">
-            {error}
+        {feedback ? (
+          <div className={`feedback-banner mb-4 ${feedback.tone === "success" ? "feedback-banner-success" : feedback.tone === "error" ? "feedback-banner-error" : "feedback-banner-info"}`}>
+            {feedback.message}
           </div>
         ) : null}
 
         {activeTab === "profile" ? (
-          <ProfileForm user={user} loading={isLoading} onSubmit={handleUpdateProfile} />
+          <ProfileForm
+            user={user}
+            isSaving={isSavingProfile}
+            isUploadingAvatar={isUploadingAvatar}
+            isRemovingAvatar={isRemovingAvatar}
+            onSaveProfile={handleUpdateProfile}
+            onUploadAvatar={handleAvatarUpload}
+            onRemoveAvatar={handleAvatarRemove}
+          />
         ) : (
-          <ChangePasswordForm loading={isLoading} onSubmit={handleChangePassword} />
+          <ChangePasswordForm loading={isChangingPassword} onSubmit={handleChangePassword} />
         )}
       </div>
     </div>
