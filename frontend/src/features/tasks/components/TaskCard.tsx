@@ -25,7 +25,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   };
 
   const formattedStatus =
-    task.status === "IN_PROGRESS" ? "In Progress" : task.status;
+    task.status === "IN_PROGRESS" ? "IN PROGRESS" : task.status;
 
   const assigneeNames =
     task.assignees.length > 0
