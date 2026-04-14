@@ -10,6 +10,7 @@ const AcceptInvitePage = () => {
     projectId: string;
     emailId: string;
   }>();
+
   const navigate = useNavigate();
   const [state, setState] = useState<State>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -17,14 +18,15 @@ const AcceptInvitePage = () => {
   const decodedEmail = emailId ? decodeURIComponent(emailId) : '';
 
   useEffect(() => {
-    if (!projectId || !emailId) {
+    if (!projectId || !decodedEmail) {
       setState('error');
       setErrorMsg('Invalid invitation link. Please request a new one.');
     }
-  }, [projectId, emailId]);
+  }, [projectId, decodedEmail]);
 
   const handleAccept = async () => {
     if (!projectId || !decodedEmail) return;
+
     setState('loading');
     setErrorMsg('');
 
@@ -34,155 +36,80 @@ const AcceptInvitePage = () => {
     } catch (err: any) {
       setState('error');
       setErrorMsg(
-        err?.response?.data?.message ?? 'Something went wrong. Please try again.',
+        err?.response?.data?.message ??
+          'Something went wrong. Please try again.',
       );
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--color-bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem',
-      }}
-    >
-      <div
-        style={{
-          background: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-lg)',
-          padding: '2.5rem 2rem',
-          maxWidth: 420,
-          width: '100%',
-          textAlign: 'center',
-        }}
-      >
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--color-bg)]">
+      <div className="w-full max-w-md text-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-8 py-10">
+
         <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            marginBottom: '1.25rem',
-            background:
-              state === 'success'
-                ? 'rgb(220 252 231)'
-                : state === 'error'
-                  ? 'rgb(254 226 226)'
-                  : 'rgb(219 234 254)',
-          }}
+          className={`mx-auto mb-5 flex items-center justify-center w-14 h-14 rounded-full
+          ${
+            state === 'success'
+              ? 'bg-green-100'
+              : state === 'error'
+              ? 'bg-red-100'
+              : 'bg-blue-100'
+          }`}
         >
           {state === 'success' ? (
-            <CheckCircle size={28} style={{ color: 'var(--color-success)' }} />
+            <CheckCircle className="text-[var(--color-success)]" size={28} />
           ) : state === 'error' ? (
-            <XCircle size={28} style={{ color: 'var(--color-danger)' }} />
+            <XCircle className="text-[var(--color-danger)]" size={28} />
           ) : (
-            <Mail size={28} style={{ color: 'var(--color-primary)' }} />
+            <Mail className="text-[var(--color-primary)]" size={28} />
           )}
         </div>
 
-        <h1
-          style={{
-            fontSize: '1.375rem',
-            fontWeight: 700,
-            color: 'var(--color-text-primary)',
-            marginBottom: '0.5rem',
-            lineHeight: 1.3,
-          }}
-        >
+        <h1 className="text-[1.375rem] font-bold text-[var(--color-text-primary)] mb-2 leading-snug">
           {state === 'success'
             ? "You're in!"
             : state === 'error'
-              ? 'Invitation Error'
-              : 'Project Invitation'}
+            ? 'Invitation Error'
+            : 'Project Invitation'}
         </h1>
 
-        <p
-          style={{
-            fontSize: '0.9rem',
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-            marginBottom: '1.75rem',
-          }}
-        >
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-7">
           {state === 'success'
             ? 'You have successfully joined the project. Head to your projects to get started.'
             : state === 'error'
-              ? errorMsg
-              : `You've been invited to join a project. Click below to accept and start collaborating.`}
+            ? errorMsg
+            : "You've been invited to join a project. Click below to accept and start collaborating."}
         </p>
 
         {(state === 'idle' || state === 'loading') && (
           <button
             onClick={handleAccept}
             disabled={state === 'loading'}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: '100%',
-              padding: '0.72rem 1.25rem',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'var(--color-text-inverse)',
-              background:
+            className={`w-full flex items-center justify-center gap-2 py-3 px-5 text-sm font-semibold rounded-[var(--radius-sm)] shadow-[var(--shadow-sm)] transition
+              ${
                 state === 'loading'
-                  ? 'var(--color-primary-light)'
-                  : 'var(--color-primary)',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              cursor: state === 'loading' ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s',
-              boxShadow: 'var(--shadow-sm)',
-              marginBottom: '0.75rem',
-            }}
-            onMouseEnter={(e) => {
-              if (state !== 'loading')
-                (e.currentTarget as HTMLElement).style.background =
-                  'var(--color-primary-dark)';
-            }}
-            onMouseLeave={(e) => {
-              if (state !== 'loading')
-                (e.currentTarget as HTMLElement).style.background =
-                  'var(--color-primary)';
-            }}
+                  ? 'bg-[var(--color-primary-light)] cursor-not-allowed'
+                  : 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]'
+              }
+              text-[var(--color-text-inverse)]
+            `}
           >
             {state === 'loading' && (
-              <Loader2
-                size={16}
-                style={{ animation: 'spin 1s linear infinite' }}
-              />
+              <Loader2 className="animate-spin" size={16} />
             )}
-            {state === 'loading' ? 'Joining project...' : 'Accept Invitation'}
+            {state === 'loading'
+              ? 'Joining project...'
+              : 'Accept Invitation'}
           </button>
         )}
 
         {state === 'error' && (
           <button
-            onClick={() => { setState('idle'); setErrorMsg(''); }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              padding: '0.72rem 1.25rem',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'var(--color-primary)',
-              background: 'transparent',
-              border: '1.5px solid var(--color-primary)',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              marginBottom: '0.75rem',
+            onClick={() => {
+              setState('idle');
+              setErrorMsg('');
             }}
+            className="w-full py-3 px-5 text-sm font-semibold rounded-[var(--radius-sm)] border border-[var(--color-primary)] text-[var(--color-primary)] mb-3"
           >
             Try Again
           </button>
@@ -191,32 +118,12 @@ const AcceptInvitePage = () => {
         {(state === 'success' || state === 'error') && (
           <button
             onClick={() => navigate('/projects')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              padding: '0.72rem 1.25rem',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: 'var(--color-text-secondary)',
-              background: 'var(--color-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-            }}
+            className="w-full py-3 px-5 text-sm font-medium rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-text-secondary)]"
           >
             Go to Projects
           </button>
         )}
       </div>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
