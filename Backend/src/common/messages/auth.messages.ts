@@ -20,6 +20,11 @@ export const AUTH_MESSAGES = {
         invalidOAuthProviderData: 'Invalid OAuth provider data',
         oauthEmailRequired:
             'OAuth provider did not return an email. Please make your email accessible and try again',
+        avatarRequired: 'Avatar file is required',
+        avatarUploadFailed: 'Failed to upload avatar',
+        avatarRemoveFailed: 'Failed to remove avatar',
+        avatarMimeTypeNotAllowed: 'Avatar must be a JPG, PNG, or WEBP image',
+        avatarTooLarge: 'Avatar file exceeds maximum allowed size',
     },
     success: {
         userRegistered: 'User registered successfully',
@@ -31,5 +36,7 @@ export const AUTH_MESSAGES = {
         currentUserRoleRetrieved: 'Current user role retrieved successfully',
         profileUpdated: 'Profile updated successfully',
         passwordChanged: 'Password changed successfully',
+        avatarUploaded: 'Avatar uploaded successfully',
+        avatarRemoved: 'Avatar removed successfully',
     },
 };

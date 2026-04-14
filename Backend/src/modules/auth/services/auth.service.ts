@@ -1,6 +1,8 @@
+import { readFile, unlink } from 'node:fs/promises';
 import {
     BadRequestException,
     ConflictException,
+    InternalServerErrorException,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -9,6 +11,11 @@ import { compare, hash } from 'bcrypt';
 import { sign, verify, type SignOptions } from 'jsonwebtoken';
 import config from '../../../config/env.config';
 import { AUTH_MESSAGES } from '../../../common/messages/auth.messages';
+import {
+    deleteFile,
+    uploadFile,
+} from '../../../common/storage/storageOperations';
+import { STORAGE_PROVIDER_KEYS } from '../../../common/storage/storage.interface';
 import {
     ChangePasswordDto,
     LoginDto,
@@ -67,7 +74,9 @@ export class AuthService {
         if (byProvider) {
             const safe = await this.authRepository.findById(byProvider.id);
             if (!safe) {
-                throw new UnauthorizedException(AUTH_MESSAGES.errors.userNotFound);
+                throw new UnauthorizedException(
+                    AUTH_MESSAGES.errors.userNotFound,
+                );
             }
             return safe;
         }
@@ -167,6 +176,49 @@ export class AuthService {
             name: dto.name,
             avatarUrl: dto.avatarUrl,
         });
+    }
+    async uploadAvatar(
+        userId: string,
+        file: Express.Multer.File,
+    ): Promise<SafeUser> {
+        await this.getProfile(userId);
+
+        const fileName = this.getAvatarFileName(userId);
+        const fileBuffer = await this.readAvatarTempFile(file.path);
+
+        try {
+            const uploaded = await this.uploadAvatarWithRetry(
+                fileBuffer,
+                fileName,
+                file.mimetype,
+                userId,
+            );
+
+            return this.authRepository.updateAvatarUrl(userId, uploaded.url);
+        } catch {
+            throw new InternalServerErrorException(
+                AUTH_MESSAGES.errors.avatarUploadFailed,
+            );
+        } finally {
+            await unlink(file.path).catch(() => undefined);
+        }
+    }
+    async removeAvatar(userId: string): Promise<SafeUser> {
+        await this.getProfile(userId);
+
+        const fileKey = this.getAvatarFileKey(userId);
+
+        await deleteFile(STORAGE_PROVIDER_KEYS.cloudinary, fileKey).catch(
+            () => undefined,
+        );
+
+        try {
+            return await this.authRepository.updateAvatarUrl(userId, null);
+        } catch {
+            throw new InternalServerErrorException(
+                AUTH_MESSAGES.errors.avatarRemoveFailed,
+            );
+        }
     }
     async changePassword(
         userId: string,
@@ -303,6 +355,56 @@ export class AuthService {
         await this.authRepository.updateRefreshTokenHash(
             userId,
             hashedRefreshToken,
+        );
+    }
+    private getAvatarFileName(userId: string): string {
+        return `user-${userId}-avatar`;
+    }
+    private getAvatarFileKey(userId: string): string {
+        return `${config.AVATAR_FOLDER}/${this.getAvatarFileName(userId)}`;
+    }
+
+    private async readAvatarTempFile(filePath: string): Promise<Buffer> {
+        try {
+            return await readFile(filePath);
+        } catch {
+            throw new InternalServerErrorException(
+                AUTH_MESSAGES.errors.avatarUploadFailed,
+            );
+        }
+    }
+
+    private async uploadAvatarWithRetry(
+        buffer: Buffer,
+        fileName: string,
+        mimeType: string,
+        userId: string,
+    ): Promise<Awaited<ReturnType<typeof uploadFile>>> {
+        const maxAttempts = Math.max(
+            1,
+            Math.floor(config.AVATAR_UPLOAD_RETRY_COUNT),
+        );
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            try {
+                return await uploadFile(STORAGE_PROVIDER_KEYS.cloudinary, {
+                    buffer,
+                    fileName,
+                    mimeType,
+                    folder: config.AVATAR_FOLDER,
+                    metadata: { userId },
+                });
+            } catch {
+                if (attempt === maxAttempts) {
+                    throw new InternalServerErrorException(
+                        AUTH_MESSAGES.errors.avatarUploadFailed,
+                    );
+                }
+            }
+        }
+
+        throw new InternalServerErrorException(
+            AUTH_MESSAGES.errors.avatarUploadFailed,
         );
     }
 }

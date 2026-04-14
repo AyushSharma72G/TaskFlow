@@ -255,6 +255,74 @@
         }
       }
     },
+    "/auth/profile/avatar": {
+      "patch": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Upload or replace current user avatar",
+        "description": "Uploads avatar using multipart/form-data and updates profile avatarUrl.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Remove current user avatar",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avatar removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
     "/auth/me/role": {
       "get": {
         "tags": [
@@ -1528,6 +1596,19 @@
           "avatarUrl": {
             "type": "string",
             "format": "uri"
+          }
+        }
+      },
+      "AvatarUploadRequest": {
+        "type": "object",
+        "required": [
+          "avatar"
+        ],
+        "properties": {
+          "avatar": {
+            "type": "string",
+            "format": "binary",
+            "description": "Avatar image file (jpeg, png, or webp)"
           }
         }
       },
