@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import config from '../../../config/env.config';
 import axios from 'axios';
 import { buildInvitationTemplateParams } from '../templates/invitation.template';
 
@@ -7,7 +7,6 @@ import { buildInvitationTemplateParams } from '../templates/invitation.template'
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  constructor(private readonly config: ConfigService) {}
 
   async sendInvitationEmail(params: {
     toEmail: string;
@@ -18,7 +17,7 @@ export class EmailService {
     encodedEmail: string;
   }): Promise<void> {
     const baseUrl =
-      this.config.get<string>('INVITE_BASE_URL') ?? 'http://localhost:5173';
+      config.INVITE_BASE_URL ?? 'http://localhost:5173';
 
     const inviteLink = `${baseUrl}/accept/invite/${params.projectId}/${params.encodedEmail}`;
 
@@ -32,12 +31,12 @@ export class EmailService {
 
     try {
       await axios.post(
-        'https://api.emailjs.com/api/v1.0/email/send',
+        config.SEND_MAIL_URL ?? "",
         {
-          service_id: this.config.get<string>('EMAILJS_SERVICE_ID'),
-          template_id: this.config.get<string>('EMAILJS_TEMPLATE_ID'),
-          user_id: this.config.get<string>('EMAILJS_PUBLIC_KEY'),
-          accessToken: this.config.get<string>('EMAILJS_PRIVATE_KEY'),
+          service_id: config.EMAILJS_SERVICE_ID,
+          template_id: config.EMAILJS_TEMPLATE_ID,
+          user_id: config.EMAILJS_PUBLIC_KEY,
+          accessToken: config.EMAILJS_PRIVATE_KEY,
           template_params: templateParams,
         },
         { headers: { 'Content-Type': 'application/json' } },

@@ -19,7 +19,6 @@ export class InviteService {
   async sendInvite(currentUserId: string, dto: SendInvitationDto) {
     const { email, projectId } = dto;
 
-    // 1. Verify project exists + invoker is owner
     const membership = await this.prisma.projectMember.findUnique({
       where: {
         userId_projectId: { userId: currentUserId, projectId },
@@ -31,7 +30,6 @@ export class InviteService {
     if (membership.role !== Role.OWNER)
       throw new ForbiddenException('Only the project owner can invite members');
 
-    // 2. Check invited user exists
     const invitedUser = await this.prisma.user.findUnique({
       where: { email },
       select: { id: true, name: true, email: true },
@@ -39,7 +37,6 @@ export class InviteService {
     if (!invitedUser)
       throw new BadRequestException('No registered user found with that email');
 
-    // 3. Check not already a member
     const alreadyMember = await this.prisma.projectMember.findUnique({
       where: {
         userId_projectId: { userId: invitedUser.id, projectId },
@@ -49,7 +46,6 @@ export class InviteService {
     if (alreadyMember)
       throw new BadRequestException('This user is already a member of the project');
 
-    // 4. Get project + inviter info for the email
     const [project, inviter] = await Promise.all([
       this.prisma.project.findUnique({
         where: { id: projectId },
@@ -63,7 +59,6 @@ export class InviteService {
 
     if (!project) throw new NotFoundException('Project not found');
 
-    // 5. Send email (non-blocking — never throws)
     this.emailService.sendInvitationEmail({
       toEmail: invitedUser.email,
       toName: invitedUser.name,

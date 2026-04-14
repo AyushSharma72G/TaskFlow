@@ -9,6 +9,6 @@ import { PrismaService } from '../../prisma/prisma.service';
   imports: [ConfigModule],
   controllers: [EmailController],
   providers: [EmailService, InviteService, PrismaService],
-  exports: [EmailService], // export if other modules ever need to send emails
+  exports: [EmailService],
 })
 export class EmailModule {}

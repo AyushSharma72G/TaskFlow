@@ -49,6 +49,13 @@ const config = {
     ),
 
     GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
+
+    EMAILJS_SERVICE_ID: process.env.EMAILJS_SERVICE_ID ?? '',
+    EMAILJS_TEMPLATE_ID: process.env.EMAILJS_TEMPLATE_ID ?? '',
+    EMAILJS_PUBLIC_KEY: process.env.EMAILJS_PUBLIC_KEY ?? '',
+    EMAILJS_PRIVATE_KEY: process.env.EMAILJS_PRIVATE_KEY ?? '',
+    SEND_MAIL_URL: process.env.SEND_MAIL_URL ?? 'https://api.emailjs.com/api/v1.0/email/send',
+    INVITE_BASE_URL: process.env.INVITE_BASE_URL ?? 'http://localhost:5173',
 };
 
 if (config.NODE_ENV === 'production') {
