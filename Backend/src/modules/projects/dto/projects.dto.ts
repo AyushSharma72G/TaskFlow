@@ -9,7 +9,7 @@ import {
 
 export class CreateProjectDto {
   @IsString()
-  @MinLength(2)
+  @MinLength(4)
   @MaxLength(150)
   @IsNotEmpty()
   title!: string;
@@ -17,7 +17,7 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(1000)
+  @MaxLength(280)
   description?: string;
 
 
@@ -32,14 +32,14 @@ export class UpdateProjectDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(2)
+  @MinLength(4)
   @MaxLength(150)
   title?: string;
 
 
   @IsOptional()
   @IsString()
-  @MaxLength(1000)
+  @MaxLength(280)
   description?: string;
 
 

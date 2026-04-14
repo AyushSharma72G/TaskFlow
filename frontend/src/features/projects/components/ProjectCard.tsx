@@ -5,6 +5,26 @@ import type { ProjectListItem } from "../types";
 
 const CARD_DESCRIPTION_PREVIEW_CHARS = 160;
 
+function startOfLocalDay(date: Date): Date {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+}
+
+function isPastDate(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return false;
+
+  return startOfLocalDay(d) < startOfLocalDay(new Date());
+}
+
+function isToday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return false;
+
+  return startOfLocalDay(d).getTime() === startOfLocalDay(new Date()).getTime();
+}
+
 function avatarImageUrl(member: {
   name: string;
   avatarUrl: string | null;
@@ -80,6 +100,8 @@ export default function ProjectCard({
     project.memberCount > project.avatars.length && tooltipItems.length > 0
       ? `First ${project.avatars.length} of ${project.memberCount} members shown. Hover avatars for names.`
       : undefined;
+  const isPast = isPastDate(project.dueDate);
+  const isTodayDate = isToday(project.dueDate);
 
   return (
     <article
@@ -161,10 +183,40 @@ export default function ProjectCard({
                 className="shrink-0 text-[var(--color-primary)]"
                 aria-hidden
               />
+              <span className="text-[var(--color-text-muted)]">Start</span>
+              <time
+                dateTime={project.createdAt}
+                className="text-[var(--color-text-secondary)]"
+              >
+                {new Date(project.createdAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </time>
+            </span>
+
+            <span
+              className="hidden h-4 w-px shrink-0 bg-[var(--color-border-strong)]/80 sm:block"
+              aria-hidden
+            />
+
+            <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-text-primary)]">
+              <CalendarDays
+                size={15}
+                className="shrink-0 text-[var(--color-primary)]"
+                aria-hidden
+              />
               <span className="text-[var(--color-text-muted)]">Due</span>
               <time
                 dateTime={project.dueDate}
-                className="text-[var(--color-text-secondary)]"
+                className={
+                  isPast
+                    ? "text-[var(--color-danger)]"
+                    : isTodayDate
+                      ? "text-yellow-500 font-semibold"
+                      : "text-[var(--color-text-secondary)]"
+                }
               >
                 {new Date(project.dueDate).toLocaleDateString(undefined, {
                   month: "short",

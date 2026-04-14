@@ -34,12 +34,11 @@ export class ProjectsService {
     }
 
     // POST /projects
-    // Creates a project and adds creator as ADMIN (mapped to Role.OWNER in DB)
+    // Creates a project and adds creator as owner
     async createProject(
         userId: string,
         dto: CreateProjectDto,
     ): Promise<ProjectCreateResponse> {
-        // Validate required fields explicitly (in addition to class-validator)
         if (!dto.title?.trim()) {
             throw new BadRequestException('title is required');
         }
@@ -47,8 +46,7 @@ export class ProjectsService {
             throw new BadRequestException('dueDate is required');
         }
 
-        // Parse the incoming ISO string into a real Date for Prisma
-        const dueDate = this.parseDueDate(dto.dueDate);
+        const dueDate = this.validateProjectDueDateForCreate(dto.dueDate);
 
         const project =
             await this.projectsRepository.createProjectAndAddOwnerMember({
@@ -114,7 +112,7 @@ export class ProjectsService {
         projectId: string,
         dto: UpdateProjectDto,
     ): Promise<ProjectUpdateResponse> {
-        // Ensure the user is ADMIN for this project (DB Role.OWNER)
+        // Ensure the user is Owner for this project (DB Role.OWNER)
         const role = await this.projectsRepository.findUserRoleInProject(
             userId,
             projectId,
@@ -154,7 +152,15 @@ export class ProjectsService {
         }
 
         if (dto.dueDate !== undefined) {
-            data.dueDate = this.parseDueDate(dto.dueDate);
+            const currentDueDate = await this.getCurrentProjectDueDate(
+                userId,
+                projectId,
+            );
+
+            data.dueDate = this.validateProjectDueDateForUpdate({
+                rawDueDate: dto.dueDate,
+                currentDueDate,
+            });
         }
 
         return this.projectsRepository.updateProjectById({
@@ -195,5 +201,72 @@ export class ProjectsService {
         }
 
         return parsed;
+    }
+
+    private validateProjectDueDateForCreate(rawDueDate: string): Date {
+        return this.validateProjectDueDate({
+            rawDueDate,
+        });
+    }
+
+    private validateProjectDueDateForUpdate(params: {
+        rawDueDate: string;
+        currentDueDate: Date | null;
+    }): Date {
+        return this.validateProjectDueDate(params);
+    }
+
+    private validateProjectDueDate(params: {
+        rawDueDate: string;
+        currentDueDate?: Date | null;
+    }): Date {
+        const nextDueDate = this.parseDueDate(params.rawDueDate);
+        const normalizedNextDueDate = this.startOfUtcDay(nextDueDate);
+        const normalizedToday = this.startOfUtcDay(new Date());
+
+        if (normalizedNextDueDate >= normalizedToday) {
+            return nextDueDate;
+        }
+
+        if (
+            params.currentDueDate &&
+            this.isSameUtcDay(nextDueDate, params.currentDueDate)
+        ) {
+            return nextDueDate;
+        }
+
+        throw new BadRequestException(
+            'dueDate cannot be in the past',
+        );
+    }
+
+    private async getCurrentProjectDueDate(
+        userId: string,
+        projectId: string,
+    ): Promise<Date | null> {
+        const membership =
+            await this.projectsRepository.findProjectDetailsForMember(
+                userId,
+                projectId,
+            );
+
+        if (!membership?.project) {
+            throw new NotFoundException('Project not found');
+        }
+
+        return membership.project.dueDate;
+    }
+
+    private isSameUtcDay(left: Date, right: Date): boolean {
+        return (
+            this.startOfUtcDay(left).getTime() ===
+            this.startOfUtcDay(right).getTime()
+        );
+    }
+
+    private startOfUtcDay(date: Date): Date {
+        const normalized = new Date(date);
+        normalized.setUTCHours(0, 0, 0, 0);
+        return normalized;
     }
 }
