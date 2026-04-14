@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { ActivityLogModule } from './modules/activity_log/activity-log.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
         ProjectsModule,
         TasksModule,
         ActivityLogModule,
+        EmailModule,
     ],
     controllers: [AppController],
     providers: [AppService],

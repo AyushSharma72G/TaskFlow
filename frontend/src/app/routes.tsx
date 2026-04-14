@@ -14,6 +14,12 @@ const TasksPage = lazy(()=>import('../features/tasks/pages/TasksPage'));
 const ActivityPage = lazy(()=>import('../features/activity/pages/ActivityPage'));
 const ProfilePage = lazy(()=>import('../features/auth/pages/ProfilePage'));
 
+import ProfilePage from "../features/auth/pages/ProfilePage";
+import { DashboardPage, HomePage } from "./placeholderPages";
+import TasksPage from "../features/tasks/pages/TasksPage";
+import ProjectsPage from "../features/projects/pages/ProjectsPage";
+import ActivityPage from "../features/activity/pages/ActivityPage";
+import AcceptInvitePage from "../features/invite/pages/AcceptInvitePage";
 
 export const router = createBrowserRouter([
   {
@@ -80,6 +86,10 @@ export const router = createBrowserRouter([
         path: "",
         element: <ProfilePage />,
       },
+      {
+        path: "/accept/invite/:projectId/:emailId",
+        element: <AcceptInvitePage />
+      }
     ],
   },
   {
