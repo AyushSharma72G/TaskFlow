@@ -41,7 +41,7 @@ export default function TaskFilters({
           >
             <option value="ALL">All Assignees</option>
             {users.map((user) => (
-              <option key={user.id} value={user.id}>
+              <option key={user.id} value={user.user.id}>
                 {user.user.name}
               </option>
             ))}

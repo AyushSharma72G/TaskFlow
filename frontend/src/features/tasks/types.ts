@@ -69,3 +69,14 @@ export interface GenerateDescriptionPayload {
 export interface GenerateDescriptionResponse {
   description: string;
 }
+
+export interface PaginatedTasksResponse {
+  items: Task[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
+}
+
+export interface FetchTasksPayload {
+  projectId: string;
+  cursor?: string;
+}

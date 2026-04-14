@@ -68,8 +68,12 @@ export class TasksRepository {
     }
 
     // find all tasks of a project
-    async findAllByProjectId(projectId: string) {
-        return this.prisma.task.findMany({
+    async findAllByProjectId(
+        projectId: string,
+        cursor?: string,
+        limit: number = 3,
+    ) {
+        const tasks = await this.prisma.task.findMany({
             where: { projectId },
             select: {
                 id: true,
@@ -79,32 +83,33 @@ export class TasksRepository {
                 priority: true,
                 dueDate: true,
                 createdAt: true,
-
                 createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
+                    select: { id: true, name: true, email: true },
                 },
-
                 assignees: {
                     select: {
                         id: true,
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true,
-                            },
-                        },
+                        user: { select: { id: true, name: true, email: true } },
                     },
                 },
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
+            orderBy: { createdAt: 'desc' },
+            take: limit + 1, // fetch one extra to determine if next page exists
+            ...(cursor && {
+                cursor: { id: cursor },
+                skip: 1, // skip the cursor item itself
+            }),
         });
+
+        const hasNextPage = tasks.length > limit;
+        const items = hasNextPage ? tasks.slice(0, limit) : tasks;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+
+        return {
+            items,
+            nextCursor, // null means no more pages
+            hasNextPage,
+        };
     }
 
     // find a single task by id
