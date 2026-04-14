@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AuthUser } from "../types";
 
-const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_AVATAR_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_AVATAR_SIZE_BYTES = import.meta.env.VITE_MAX_AVATAR_SIZE_BYTES;
+const ALLOWED_AVATAR_MIME_TYPES = import.meta.env.VITE_ALLOWED_AVATAR_MIME_TYPES;
 
 type ProfileFormProps = {
   user: AuthUser;
