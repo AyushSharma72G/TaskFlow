@@ -31,6 +31,65 @@ function clampDescription(value: string): string {
   return value.slice(0, DESCRIPTION_MAX_LENGTH);
 }
 
+function formatDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function startOfLocalDay(date: Date): Date {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+}
+
+function parseInputDate(value: string): Date | null {
+  if (!value) return null;
+
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function validateProjectDueDate(params: {
+  mode: "create" | "edit";
+  dueDate: string;
+  existingDueDate: string;
+}): string | null {
+  if (!params.dueDate) {
+    return "Due date is required.";
+  }
+
+  const selectedDate = parseInputDate(params.dueDate);
+  if (!selectedDate) {
+    return "Please choose a valid due date.";
+  }
+
+  const today = startOfLocalDay(new Date());
+  if (startOfLocalDay(selectedDate) >= today) {
+    return null;
+  }
+
+  if (
+    params.mode === "edit" &&
+    params.existingDueDate &&
+    params.dueDate === params.existingDueDate
+  ) {
+    return null;
+  }
+
+  return params.mode === "create"
+    ? "Due date cannot be in the past."
+    : "Choose today, a future date, or keep the current due date.";
+}
+
+function validateProjectTitle(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return "Title is required.";
+  if (trimmed.length < 4) return "Title must be at least 4 characters.";
+  return null;
+}
+
 export default function ProjectFormModal({
   mode,
   initialProject,
@@ -42,9 +101,14 @@ export default function ProjectFormModal({
   const [description, setDescription] = useState(
     clampDescription(initialProject?.description ?? ""),
   );
-  const [dueDate, setDueDate] = useState(
-    initialProject?.dueDate ? dueDateToInputValue(initialProject.dueDate) : "",
-  );
+  const initialDueDate = initialProject?.dueDate
+    ? dueDateToInputValue(initialProject.dueDate)
+    : "";
+  const [dueDate, setDueDate] = useState(initialDueDate);
+  const [touched, setTouched] = useState({
+    title: false,
+    dueDate: false,
+  });
 
   useEffect(() => {
     setTitle(initialProject?.title ?? "");
@@ -54,15 +118,33 @@ export default function ProjectFormModal({
         ? dueDateToInputValue(initialProject.dueDate)
         : "",
     );
+    setTouched({ title: false, dueDate: false });
   }, [initialProject, mode]);
+
+  const todayInputValue = formatDateInputValue(new Date());
+  const minDueDate =
+    mode === "edit" && initialDueDate && initialDueDate < todayInputValue
+      ? initialDueDate
+      : todayInputValue;
+
+  const titleError = validateProjectTitle(title);
+  const dueDateError = validateProjectDueDate({
+    mode,
+    dueDate,
+    existingDueDate: initialDueDate,
+  });
+  const showTitleError = touched.title && Boolean(titleError);
+  const showDueDateError = touched.dueDate && Boolean(dueDateError);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !dueDate) return;
+    setTouched({ title: true, dueDate: true });
+    if (titleError || dueDateError) return;
+
     onSubmit({
       title: title.trim(),
       description: description.trim(),
-      dueDate: new Date(dueDate).toISOString(),
+      dueDate: dueDate,
     });
   };
 
@@ -95,19 +177,31 @@ export default function ProjectFormModal({
               htmlFor="project-title"
               className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]"
             >
-              Title
+              Title <span className="text-[var(--color-danger)]">*</span>
             </label>
             <input
               id="project-title"
               type="text"
-              minLength={2}
+              minLength={4}
               maxLength={150}
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onBlur={() =>
+                setTouched((prev) => ({
+                  ...prev,
+                  title: true,
+                }))
+              }
+              aria-invalid={showTitleError}
               className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
               placeholder="e.g. Website redesign"
             />
+            {showTitleError ? (
+              <p className="mt-2 text-sm text-[var(--color-danger)]">
+                {titleError}
+              </p>
+            ) : null}
           </div>
 
           <div>
@@ -144,16 +238,36 @@ export default function ProjectFormModal({
               htmlFor="project-due"
               className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]"
             >
-              Due date
+              Due date <span className="text-[var(--color-danger)]">*</span>
             </label>
             <input
               id="project-due"
               type="date"
+              min={minDueDate}
               required
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              onBlur={() =>
+                setTouched((prev) => ({
+                  ...prev,
+                  dueDate: true,
+                }))
+              }
+              aria-invalid={showDueDateError}
               className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
+            {showDueDateError ? (
+              <p className="mt-2 text-sm text-[var(--color-danger)]">
+                {dueDateError}
+              </p>
+            ) : mode === "edit" &&
+              initialDueDate &&
+              initialDueDate < todayInputValue ? (
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                This project already has a past due date. You can keep it,
+                choose today, or select any future date.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -167,7 +281,9 @@ export default function ProjectFormModal({
             </button>
             <button
               type="submit"
-              disabled={submitting || !title.trim() || !dueDate}
+              disabled={
+                submitting || Boolean(titleError) || Boolean(dueDateError)
+              }
               className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-inverse)] shadow-[var(--shadow-sm)] transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting
