@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, matchPath, useLocation } from "react-router-dom";
 import {
   FolderKanban,
   Home,
@@ -45,6 +45,7 @@ export const Sidebar = ({
   onToggleCollapsed,
 }: SidebarProps) => {
   const isCollapsed = collapsed ?? false;
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectAuthUser);
@@ -135,15 +136,22 @@ export const Sidebar = ({
             end={item.to === "/"}
             onClick={onNavigate}
             title={isCollapsed ? item.label : undefined}
-            className={({ isActive }) =>
+            className={({ isActive }) => {
+              const isProjectsDeepRoute =
+                item.to === "/projects" &&
+                Boolean(matchPath({ path: "/project/:id" }, location.pathname));
+              const computedActive = isActive || isProjectsDeepRoute;
+
+              return (
               `flex items-center gap-2 rounded-md transition ${
                 isCollapsed ? "justify-center px-0 py-2" : "px-3 py-2"
               } ${
-                isActive
+                computedActive
                   ? "bg-primary text-text-inverse shadow-sm"
                   : "text-text-secondary hover:bg-muted hover:text-text-primary"
               }`
-            }
+              );
+            }}
           >
             <item.icon className="h-[22px] w-[22px] shrink-0" />
             {!isCollapsed ? (
