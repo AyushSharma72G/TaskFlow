@@ -17,6 +17,26 @@ export interface ProjectListItem {
   avatars: ProjectAvatar[];
 }
 
+export interface GetProjectsParams {
+  cursor?: string;
+  limit?: number;
+  search?: string;
+  ownerOnly?: boolean;
+  dueFilter?: ProjectDueFilter;
+}
+
+export type ProjectDueFilter =
+  | "all"
+  | "overdue"
+  | "today"
+  | "this_week"
+  | "next_30_days";
+
+export interface PaginatedProjectsResponse {
+  data: ProjectListItem[];
+  nextCursor: string | null;
+}
+
 export interface CreateProjectPayload {
   title: string;
   description?: string;

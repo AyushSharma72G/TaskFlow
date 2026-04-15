@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import PrimaryButton from "../../../shared/components/buttons/PrimaryButton";
@@ -8,13 +8,18 @@ import ProjectCard from "../components/ProjectCard";
 import ProjectFormModal from "../components/ProjectFormModal";
 import type { ProjectFormValues } from "../components/ProjectFormModal";
 import DeleteProjectModal from "../components/DeleteProjectModal";
+import ProjectsSearchBar from "../components/ProjectsSearchBar";
+import ProjectsFilterMenu from "../components/ProjectsFilterMenu";
 import {
   selectProjects,
   selectProjectsError,
   selectProjectsLoading,
+  selectProjectsLoadingMore,
+  selectProjectsNextCursor,
 } from "../store/projectsSelectors";
 import { clearProjectsError } from "../store/projectsSlice";
 import type { ProjectListItem } from "../types";
+import type { ProjectDueFilter } from "../types";
 import {
   createProject,
   deleteProject,
@@ -36,7 +41,9 @@ export default function ProjectsPage() {
   const user = useAppSelector(selectAuthUser);
   const projects = useAppSelector(selectProjects);
   const loading = useAppSelector(selectProjectsLoading);
+  const loadingMore = useAppSelector(selectProjectsLoadingMore);
   const error = useAppSelector(selectProjectsError);
+  const nextCursor = useAppSelector(selectProjectsNextCursor);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
@@ -47,6 +54,30 @@ export default function ProjectsPage() {
     useState<ProjectListItem | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [appliedOwnerOnly, setAppliedOwnerOnly] = useState(false);
+  const [appliedDueFilter, setAppliedDueFilter] =
+    useState<ProjectDueFilter>("all");
+  const [draftOwnerOnly, setDraftOwnerOnly] = useState(false);
+  const [draftDueFilter, setDraftDueFilter] = useState<ProjectDueFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount =
+    (searchQuery ? 1 : 0) +
+    (appliedOwnerOnly ? 1 : 0) +
+    (appliedDueFilter !== "all" ? 1 : 0);
+  const filterMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const query = useMemo(
+    () => ({
+      limit: 10,
+      search: searchQuery || undefined,
+      ownerOnly: appliedOwnerOnly,
+      dueFilter: appliedDueFilter,
+    }),
+    [searchQuery, appliedOwnerOnly, appliedDueFilter],
+  );
 
   const canManageProject = useCallback(
     (project: ProjectListItem): boolean => {
@@ -58,14 +89,60 @@ export default function ProjectsPage() {
   );
 
   useEffect(() => {
-    void dispatch(fetchProjects());
-  }, [dispatch]);
+    void dispatch(fetchProjects(query));
+  }, [dispatch, query]);
+
+  const loadMoreProjects = useCallback(async () => {
+    if (!nextCursor || loadingMore) return;
+    await dispatch(fetchProjects({ ...query, cursor: nextCursor, append: true }));
+  }, [dispatch, nextCursor, loadingMore, query]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    if (!nextCursor) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) return;
+        if (loadingMore || !nextCursor) return;
+        void loadMoreProjects();
+      },
+      {
+        root: null,
+        rootMargin: "160px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [loadMoreProjects, loadingMore, nextCursor]);
 
   useEffect(() => {
     if (!error) return;
     const t = window.setTimeout(() => dispatch(clearProjectsError()), 6000);
     return () => window.clearTimeout(t);
   }, [error, dispatch]);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    setDraftOwnerOnly(appliedOwnerOnly);
+    setDraftDueFilter(appliedDueFilter);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!filterMenuRef.current) return;
+      if (filterMenuRef.current.contains(event.target as Node)) return;
+      setFiltersOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [filtersOpen, appliedOwnerOnly, appliedDueFilter]);
 
   const openCreate = useCallback(() => {
     setFormMode("create");
@@ -103,9 +180,12 @@ export default function ProjectsPage() {
         if (formMode === "create") {
           await dispatch(
             createProject({
-              title: values.title,
-              description: values.description || undefined,
-              dueDate: values.dueDate,
+              payload: {
+                title: values.title,
+                description: values.description || undefined,
+                dueDate: values.dueDate,
+              },
+              query,
             }),
           ).unwrap();
         } else if (editingProject) {
@@ -118,6 +198,7 @@ export default function ProjectsPage() {
                 description: values.description,
                 dueDate: values.dueDate,
               },
+              query,
             }),
           ).unwrap();
         }
@@ -127,7 +208,7 @@ export default function ProjectsPage() {
         setFormSubmitting(false);
       }
     },
-    [dispatch, formMode, editingProject, closeForm, canManageProject],
+    [dispatch, formMode, editingProject, closeForm, canManageProject, query],
   );
 
   const handleConfirmDelete = useCallback(async () => {
@@ -170,6 +251,40 @@ export default function ProjectsPage() {
         </PrimaryButton>
       </div>
 
+      <div className="relative" ref={filterMenuRef}>
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <ProjectsSearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSearch={() => setSearchQuery(searchInput.trim())}
+            className="w-full sm:w-[28rem] sm:max-w-[65vw] sm:flex-none"
+          />
+
+          <ProjectsFilterMenu
+            filtersOpen={filtersOpen}
+            activeFilterCount={activeFilterCount}
+            ownerOnly={draftOwnerOnly}
+            dueFilter={draftDueFilter}
+            onToggleFilters={() => setFiltersOpen((open) => !open)}
+            onOwnerOnlyChange={setDraftOwnerOnly}
+            onDueFilterChange={setDraftDueFilter}
+            onClearAll={() => {
+              setSearchInput("");
+              setSearchQuery("");
+              setDraftOwnerOnly(false);
+              setDraftDueFilter("all");
+              setAppliedOwnerOnly(false);
+              setAppliedDueFilter("all");
+            }}
+            onDone={() => {
+              setAppliedOwnerOnly(draftOwnerOnly);
+              setAppliedDueFilter(draftDueFilter);
+              setFiltersOpen(false);
+            }}
+          />
+        </div>
+      </div>
+
       {error ? (
         <div
           className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -195,20 +310,39 @@ export default function ProjectsPage() {
           </PrimaryButton>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          {projects.map((project) => (
-            <li key={project.id} className="w-full">
-              <ProjectCard
-                className="w-full"
-                project={project}
-                progressPercent={projectProgress(project)}
-                canManage={canManageProject(project)}
-                onEdit={openEdit}
-                onDelete={requestDelete}
-              />
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-4">
+          <ul className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+            {projects.map((project) => (
+              <li key={project.id} className="w-full">
+                <ProjectCard
+                  className="w-full"
+                  project={project}
+                  progressPercent={projectProgress(project)}
+                  canManage={canManageProject(project)}
+                  onEdit={openEdit}
+                  onDelete={requestDelete}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {loadingMore ? (
+            <div
+              className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]"
+              aria-live="polite"
+              aria-label="Loading more projects"
+            >
+              <div className="h-1.5 w-full bg-[var(--color-muted)]">
+                <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[var(--color-primary)]/20 via-[var(--color-primary)] to-[var(--color-secondary)]/30" />
+              </div>
+              <div className="px-3 py-2 text-center text-xs font-medium text-[var(--color-text-muted)]">
+                Loading more projects...
+              </div>
+            </div>
+          ) : null}
+
+          <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
+        </div>
       )}
 
       {formOpen ? (
