@@ -10,6 +10,7 @@ import config from './config/env.config';
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
     const app = await NestFactory.create(AppModule);
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
     app.enableCors({
         origin: config.FRONTEND_URL,
         credentials: true,
