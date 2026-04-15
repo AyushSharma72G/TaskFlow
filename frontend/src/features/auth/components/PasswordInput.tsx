@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import {Eye , EyeClosed} from "lucide-react";
 type PasswordInputProps = {
   id: string;
   label: string;
@@ -23,6 +23,9 @@ export default function PasswordInput({
     <div className="space-y-1.5">
       <label htmlFor={id} className="text-sm font-medium text-text-secondary">
         {label}
+        <span className="text-danger">
+          *
+        </span>
       </label>
       <div className="relative">
         <input
@@ -40,7 +43,7 @@ export default function PasswordInput({
           onClick={() => setShowPassword((prev) => !prev)}
           className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
         >
-          {showPassword ? "Hide" : "Show"}
+          {showPassword ? <EyeClosed /> : <Eye />}
         </button>
       </div>
     </div>

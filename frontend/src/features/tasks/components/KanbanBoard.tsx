@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Task, TaskStatus } from "../types";
 import TaskCard from "./TaskCard";
 import {
@@ -138,7 +138,6 @@ export default function KanbanBoard({
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const pendingTaskIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isDragging) {

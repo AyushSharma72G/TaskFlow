@@ -1,10 +1,19 @@
 import { useMemo, useState } from "react";
 import AuthSubmitButton from "./AuthSubmitButton";
+import {
+  getRegisterValidationMessage,
+  trimAuthInput,
+} from "./authFormValidation";
+import FormValidationMessage from "./FormValidationMessage";
 import PasswordInput from "./PasswordInput";
 
 type RegisterFormProps = {
   loading?: boolean;
-  onSubmit: (payload: { name: string; email: string; password: string }) => void;
+  onSubmit: (payload: {
+    name: string;
+    email: string;
+    password: string;
+  }) => void;
 };
 
 export default function RegisterForm({
@@ -14,43 +23,56 @@ export default function RegisterForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
+  const { name: trimmedName, email: trimmedEmail, password: trimmedPassword } =
+    trimAuthInput({ name, email, password });
 
   const isValid = useMemo(
     () =>
-      name.trim().length >= 2 &&
-      email.trim().includes("@") &&
-      password.trim().length >= 8,
-    [name, email, password],
+      getRegisterValidationMessage({
+        name: trimmedName,
+        email: trimmedEmail,
+        password: trimmedPassword,
+      }) === null,
+    [trimmedName, trimmedEmail, trimmedPassword],
   );
 
-  const validationMessage = useMemo(() => {
-    if (!name.trim()) return "Name is required.";
-    if (name.trim().length < 2) return "Name must be at least 2 characters.";
-    if (!email.trim()) return "Email is required.";
-    if (!email.trim().includes("@")) return "Enter a valid email address.";
-    if (!password.trim()) return "Password is required.";
-    if (password.trim().length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-    return null;
-  }, [name, email, password]);
+  const validationMessage = useMemo(
+    () =>
+      getRegisterValidationMessage({
+        name: trimmedName,
+        email: trimmedEmail,
+        password: trimmedPassword,
+      }),
+    [trimmedName, trimmedEmail, trimmedPassword],
+  );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setHasTriedSubmit(true);
     if (!isValid || loading) return;
 
     onSubmit({
-      name: name.trim(),
-      email: email.trim(),
-      password: password.trim(),
+      name: trimmedName,
+      email: trimmedEmail,
+      password: trimmedPassword,
     });
   };
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <FormValidationMessage
+        message={hasTriedSubmit ? validationMessage : null}
+        variant="error"
+      />
+
       <div className="space-y-1.5">
-        <label htmlFor="register-name" className="text-sm font-medium text-text-secondary">
+        <label
+          htmlFor="register-name"
+          className="text-sm font-medium text-text-secondary"
+        >
           Full Name
+          <span className="text-danger">*</span>
         </label>
         <input
           id="register-name"
@@ -64,8 +86,12 @@ export default function RegisterForm({
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="register-email" className="text-sm font-medium text-text-secondary">
+        <label
+          htmlFor="register-email"
+          className="text-sm font-medium text-text-secondary"
+        >
           Email
+          <span className="text-danger">*</span>
         </label>
         <input
           id="register-email"
@@ -87,14 +113,10 @@ export default function RegisterForm({
         placeholder="Minimum 8 characters"
       />
 
-      {validationMessage ? (
-        <p className="text-xs text-text-secondary">{validationMessage}</p>
-      ) : null}
-
       <AuthSubmitButton
         label="Create account"
         loading={loading}
-        disabled={!isValid}
+        disabled={loading}
       />
     </form>
   );
