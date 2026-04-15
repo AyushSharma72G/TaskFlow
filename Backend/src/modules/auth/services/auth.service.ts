@@ -194,7 +194,11 @@ export class AuthService {
                 userId,
             );
 
-            return this.authRepository.updateAvatarUrl(userId, uploaded.url);
+            return this.authRepository.upsertAvatarFile(
+                userId,
+                uploaded.fileKey,
+                uploaded.url,
+            );
         } catch {
             throw new InternalServerErrorException(
                 AUTH_MESSAGES.errors.avatarUploadFailed,
@@ -213,7 +217,7 @@ export class AuthService {
         );
 
         try {
-            return await this.authRepository.updateAvatarUrl(userId, null);
+            return await this.authRepository.removeAvatarFile(userId);
         } catch {
             throw new InternalServerErrorException(
                 AUTH_MESSAGES.errors.avatarRemoveFailed,

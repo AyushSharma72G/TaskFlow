@@ -31,6 +31,11 @@ enum ActionType {
   TASK_DELETED
 }
 
+enum UserFileStatus {
+  ACTIVE
+  ORPHANED
+}
+
 model User {
   id               String   @id @default(cuid())
   name             String
@@ -49,6 +54,20 @@ model User {
   createdTasks   Task[]       @relation("CreatedTasks")
   activityLogs   ActivityLog[]
   taskAssignments TaskAssignee[]
+  files          UserFile[]
+}
+
+model UserFile {
+  id        String         @id @default(cuid())
+  userId    String
+  url       String
+  fileKey   String         @unique
+  status    UserFileStatus @default(ACTIVE)
+  createdAt DateTime       @default(now())
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }
 
 model Project {
