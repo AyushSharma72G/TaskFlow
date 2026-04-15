@@ -47,6 +47,8 @@ const config = {
         process.env.AVATAR_UPLOAD_RETRY_COUNT,
         3,
     ),
+    ORPHANED_FILES_CLEANUP_CRON:
+        process.env.ORPHANED_FILES_CLEANUP_CRON ?? '0 0 * * *',
 
     GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
 

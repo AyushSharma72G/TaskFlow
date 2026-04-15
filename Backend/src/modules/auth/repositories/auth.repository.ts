@@ -26,6 +26,11 @@ export type SafeUser = {
 @Injectable()
 export class AuthRepository {
     constructor(private readonly prisma: PrismaService) {}
+
+    private get userFileModel(): any {
+        return this.prisma.userFile;
+    }
+
     async findByEmail(email: string) {
         return this.prisma.user.findUnique({ where: { email } });
     }
@@ -125,15 +130,51 @@ export class AuthRepository {
             select: safeUserSelect,
         })) as SafeUser;
     }
-    async updateAvatarUrl(
-        id: string,
-        avatarUrl: string | null,
+    async upsertAvatarFile(
+        userId: string,
+        fileKey: string,
+        url: string,
     ): Promise<SafeUser> {
-        return (await this.prisma.user.update({
-            where: { id },
-            data: { avatarUrl },
-            select: safeUserSelect,
-        })) as SafeUser;
+        const [, , updatedUser] = await this.prisma.$transaction([
+            this.userFileModel.updateMany({
+                where: { userId, status: 'ACTIVE' },
+                data: { status: 'ORPHANED' },
+            }),
+            this.userFileModel.create({
+                data: { userId, fileKey, url },
+            }),
+            this.prisma.user.update({
+                where: { id: userId },
+                data: { avatarUrl: url },
+                select: safeUserSelect,
+            }),
+        ]);
+
+        return updatedUser as SafeUser;
+    }
+    async removeAvatarFile(userId: string): Promise<SafeUser> {
+        const [, updatedUser] = await this.prisma.$transaction([
+            this.userFileModel.updateMany({
+                where: { userId, status: 'ACTIVE' },
+                data: { status: 'ORPHANED' },
+            }),
+            this.prisma.user.update({
+                where: { id: userId },
+                data: { avatarUrl: null },
+                select: safeUserSelect,
+            }),
+        ]);
+
+        return updatedUser as SafeUser;
+    }
+    async findOrphanedFiles(): Promise<Array<{ id: string; fileKey: string }>> {
+        return this.userFileModel.findMany({
+            where: { status: 'ORPHANED' },
+            select: { id: true, fileKey: true },
+        });
+    }
+    async deleteUserFileById(id: string): Promise<void> {
+        await this.userFileModel.delete({ where: { id } });
     }
     async updatePassword(id: string, password: string): Promise<void> {
         await this.prisma.user.update({

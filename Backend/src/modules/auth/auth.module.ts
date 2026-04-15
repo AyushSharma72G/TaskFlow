@@ -42,5 +42,6 @@ const oauthStrategyProviders = [
         },
         OAuthProviderRegistry,
     ],
+    exports: [AuthRepository],
 })
 export class AuthModule {}
