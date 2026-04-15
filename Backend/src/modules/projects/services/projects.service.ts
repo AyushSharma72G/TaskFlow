@@ -6,10 +6,11 @@ import {
 } from '@nestjs/common';
 import { Role, TaskStatus } from '@prisma/client';
 import { CreateProjectDto, UpdateProjectDto } from '../dto/projects.dto';
+import type { ProjectDueFilter } from '../dto/projects.dto';
 import {
     ProjectCreateResponse,
     ProjectDetails,
-    ProjectListItem,
+    ProjectsPageResult,
     ProjectUpdateResponse,
     ProjectsRepository,
 } from '../repositories/projects.repository';
@@ -26,9 +27,28 @@ export class ProjectsService {
 
     // GET /projects
     // Returns only projects where the user is a member.
-    async getProjectsForUser(userId: string): Promise<ProjectListItem[]> {
-        const rows =
-            await this.projectsRepository.findProjectsWhereUserIsMember(userId);
+    async getProjectsForUser(
+        userId: string,
+        params: {
+            cursor?: string;
+            limit: number;
+            search?: string;
+            ownerOnly: boolean;
+            dueFilter: ProjectDueFilter;
+        },
+    ): Promise<ProjectsPageResult> {
+        const pageSize = params.limit;
+        const rows = await this.projectsRepository.findProjectsWhereUserIsMember(
+            userId,
+            {
+                cursor: params.cursor,
+                limit: pageSize + 1,
+                pageSize,
+                search: params.search,
+                ownerOnly: params.ownerOnly,
+                dueFilter: params.dueFilter,
+            },
+        );
 
         return rows;
     }

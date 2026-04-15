@@ -1,13 +1,18 @@
 import { api } from "../../../shared/lib/axios";
 import type {
   CreateProjectPayload,
-  ProjectListItem,
+  GetProjectsParams,
+  PaginatedProjectsResponse,
   UpdateProjectPayload,
 } from "../types";
 
 export const projectsApi = {
-  async getProjects(): Promise<ProjectListItem[]> {
-    const response = await api.get<ProjectListItem[]>("/projects");
+  async getProjects(
+    params?: GetProjectsParams,
+  ): Promise<PaginatedProjectsResponse> {
+    const response = await api.get<PaginatedProjectsResponse>("/projects", {
+      params,
+    });
     return response.data;
   },
 

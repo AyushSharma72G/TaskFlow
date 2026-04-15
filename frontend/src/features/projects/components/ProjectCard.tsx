@@ -25,12 +25,11 @@ function isToday(dateStr: string): boolean {
   return startOfLocalDay(d).getTime() === startOfLocalDay(new Date()).getTime();
 }
 
-function avatarImageUrl(member: {
-  name: string;
-  avatarUrl: string | null;
-}): string {
-  if (member.avatarUrl) return member.avatarUrl;
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=eef2ff&color=3730a3&size=128`;
+export function avatarImageUrl(name: string, avatarUrl: string | null): string {
+  return (
+    avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=64`
+  );
 }
 
 function descriptionPreview(description: string): {
@@ -84,7 +83,7 @@ export default function ProjectCard({
     id: a.id,
     name: a.name,
     designation: "Member",
-    image: avatarImageUrl(a),
+    image: avatarImageUrl(a.name, a.avatarUrl),
   }));
 
   const moreThanPreview = Math.max(

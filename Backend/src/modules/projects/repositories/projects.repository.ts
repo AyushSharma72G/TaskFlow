@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Role, TaskStatus } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ProjectMember, User } from '@prisma/client';
 import { TaskPriority } from '@prisma/client';
+import type { ProjectDueFilter } from '../dto/projects.dto';
 
 export type ProjectMemberWithUser = ProjectMember & {
     user: User;
@@ -23,6 +25,11 @@ export type ProjectListItem = {
         name: string;
         avatarUrl: string | null;
     }[];
+};
+
+export type ProjectsPageResult = {
+    data: Omit<ProjectListItem, 'progress'>[];
+    nextCursor: string | null;
 };
 
 export type ProjectCreateResponse = {
@@ -110,51 +117,80 @@ export class ProjectsRepository {
     // We fetch only counts (no full tasks/members arrays).
     async findProjectsWhereUserIsMember(
         userId: string,
-    ): Promise<Omit<ProjectListItem, 'progress'>[]> {
-        const memberships = await this.prisma.projectMember.findMany({
-            where: {
-                userId,
+        params: {
+            cursor?: string;
+            limit: number;
+            pageSize: number;
+            search?: string;
+            ownerOnly: boolean;
+            dueFilter: ProjectDueFilter;
+        },
+    ): Promise<ProjectsPageResult> {
+        const where: Prisma.ProjectWhereInput = {
+            members: {
+                some: { userId },
             },
+        };
+
+        if (params.ownerOnly) {
+            where.ownerId = userId;
+        }
+
+        if (params.search?.trim()) {
+            const searchTerm = params.search.trim();
+            where.OR = [
+                { title: { contains: searchTerm, mode: 'insensitive' } },
+                { description: { contains: searchTerm, mode: 'insensitive' } },
+            ];
+        }
+
+        const dueDateFilter = this.buildDueDateFilter(params.dueFilter);
+        if (dueDateFilter) {
+            where.dueDate = dueDateFilter;
+        }
+
+        const projects = await this.prisma.project.findMany({
+            where,
+            take: params.limit,
+            skip: params.cursor ? 1 : 0,
+            cursor: params.cursor ? { id: params.cursor } : undefined,
+            orderBy: { createdAt: 'desc' },
             select: {
-                project: {
+                id: true,
+                title: true,
+                description: true,
+                dueDate: true,
+                createdAt: true,
+                ownerId: true,
+                members: {
+                    take: 5,
                     select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        dueDate: true,
-                        createdAt: true,
-                        ownerId: true,
-                        members: {
-                            take: 5,
+                        user: {
                             select: {
-                                user: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        avatarUrl: true,
-                                    },
-                                },
-                            },
-                        },
-                        _count: {
-                            select: {
-                                members: true,
-                                tasks: true,
+                                id: true,
+                                name: true,
+                                avatarUrl: true,
                             },
                         },
                     },
                 },
-            },
-            orderBy: {
-                project: {
-                    createdAt: 'desc',
+                _count: {
+                    select: {
+                        members: true,
+                        tasks: true,
+                    },
                 },
             },
         });
 
-        const projects = memberships.map((m) => m.project);
-        const projectIds = projects.map((p) => p.id);
-        if (projectIds.length === 0) return [];
+        const hasMore = projects.length > params.pageSize;
+        const pageProjects = hasMore
+            ? projects.slice(0, params.pageSize)
+            : projects;
+        const projectIds = pageProjects.map((p) => p.id);
+        if (projectIds.length === 0) {
+            return { data: [], nextCursor: null };
+        }
 
         // Count completed tasks per project (TaskStatus.DONE)
         const completedByProject = await this.prisma.task.groupBy({
@@ -170,7 +206,7 @@ export class ProjectsRepository {
             completedByProject.map((row) => [row.projectId, row._count._all]),
         );
 
-        return projects.map((p) => ({
+        const data = pageProjects.map((p) => ({
             id: p.id,
             title: p.title,
             description: p.description ?? '',
@@ -186,6 +222,52 @@ export class ProjectsRepository {
                 avatarUrl: m.user.avatarUrl,
             })),
         }));
+
+        return {
+            data,
+            nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null,
+        };
+    }
+
+    private buildDueDateFilter(
+        dueFilter: ProjectDueFilter,
+    ): Prisma.DateTimeFilter | undefined {
+        if (dueFilter === 'all') {
+            return undefined;
+        }
+
+        const now = new Date();
+        const startToday = this.startOfUtcDay(now);
+        const startTomorrow = new Date(startToday);
+        startTomorrow.setUTCDate(startTomorrow.getUTCDate() + 1);
+
+        if (dueFilter === 'overdue') {
+            return { lt: startToday };
+        }
+
+        if (dueFilter === 'today') {
+            return { gte: startToday, lt: startTomorrow };
+        }
+
+        if (dueFilter === 'this_week') {
+            const endOfWeek = new Date(startToday);
+            endOfWeek.setUTCDate(endOfWeek.getUTCDate() + 7);
+            return { gte: startToday, lt: endOfWeek };
+        }
+
+        if (dueFilter === 'next_30_days') {
+            const endWindow = new Date(startToday);
+            endWindow.setUTCDate(endWindow.getUTCDate() + 30);
+            return { gte: startToday, lt: endWindow };
+        }
+
+        return undefined;
+    }
+
+    private startOfUtcDay(date: Date): Date {
+        const normalized = new Date(date);
+        normalized.setUTCHours(0, 0, 0, 0);
+        return normalized;
     }
 
     async createProjectAndAddOwnerMember(params: {

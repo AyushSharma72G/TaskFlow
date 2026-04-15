@@ -6,12 +6,17 @@ import {
     Param,
     Patch,
     Post,
+    Query,
     Req,
     UseGuards,
 } from '@nestjs/common';
 import type { AuthRequest } from '../../../common/guards/auth.guards';
 import { JwtCookieAuthGuard } from '../../../common/guards/auth.guards';
-import { CreateProjectDto, UpdateProjectDto } from '../dto/projects.dto';
+import {
+    CreateProjectDto,
+    GetProjectsQueryDto,
+    UpdateProjectDto,
+} from '../dto/projects.dto';
 import { ProjectsService } from '../services/projects.service';
 
 @Controller('projects')
@@ -22,8 +27,17 @@ export class ProjectsController {
     // Returns only projects where the current user is a member.
     @Get()
     @UseGuards(JwtCookieAuthGuard)
-    async getProjects(@Req() request: AuthRequest) {
-        return this.projectsService.getProjectsForUser(request.user.id);
+    async getProjects(
+        @Req() request: AuthRequest,
+        @Query() query: GetProjectsQueryDto,
+    ) {
+        return this.projectsService.getProjectsForUser(request.user.id, {
+            cursor: query.cursor || undefined,
+            limit: query.limit ?? 10,
+            search: query.search,
+            ownerOnly: query.ownerOnly ?? false,
+            dueFilter: query.dueFilter ?? 'all',
+        });
     }
 
     // GET /projects/:id
@@ -68,7 +82,7 @@ export class ProjectsController {
     }
 
     // DELETE /projects/:id
-    // Deletes the project (ADMIN/OWNER only)
+    // Deletes the project (OWNER only)
     @Delete(':id')
     @UseGuards(JwtCookieAuthGuard)
     async deleteProject(

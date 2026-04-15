@@ -2,17 +2,29 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { projectsApi } from "../api/projects.api";
 import type {
   CreateProjectPayload,
-  ProjectListItem,
+  GetProjectsParams,
+  PaginatedProjectsResponse,
   UpdateProjectPayload,
 } from "../types";
 
 export const fetchProjects = createAsyncThunk<
-  ProjectListItem[],
-  void,
+  PaginatedProjectsResponse & { append: boolean },
+  (GetProjectsParams & { append?: boolean }) | void,
   { rejectValue: string }
->("projects/fetchProjects", async (_, thunkAPI) => {
+>("projects/fetchProjects", async (args, thunkAPI) => {
+  const params = args ?? {};
   try {
-    return await projectsApi.getProjects();
+    const response = await projectsApi.getProjects({
+      cursor: params.cursor,
+      limit: params.limit,
+      search: params.search,
+      ownerOnly: params.ownerOnly,
+      dueFilter: params.dueFilter,
+    });
+    return {
+      ...response,
+      append: Boolean(params.append),
+    };
   } catch (error: unknown) {
     const message =
       (error as { response?: { data?: { message?: string } } })?.response?.data
@@ -24,13 +36,13 @@ export const fetchProjects = createAsyncThunk<
 });
 
 export const createProject = createAsyncThunk<
-  ProjectListItem[],
-  CreateProjectPayload,
+  PaginatedProjectsResponse,
+  { payload: CreateProjectPayload; query?: GetProjectsParams },
   { rejectValue: string }
->("projects/createProject", async (payload, thunkAPI) => {
+>("projects/createProject", async ({ payload, query }, thunkAPI) => {
   try {
     await projectsApi.createProject(payload);
-    return await projectsApi.getProjects();
+    return await projectsApi.getProjects(query);
   } catch (error: unknown) {
     const message =
       (error as { response?: { data?: { message?: string } } })?.response?.data
@@ -42,13 +54,13 @@ export const createProject = createAsyncThunk<
 });
 
 export const updateProject = createAsyncThunk<
-  ProjectListItem[],
-  { projectId: string; payload: UpdateProjectPayload },
+  PaginatedProjectsResponse,
+  { projectId: string; payload: UpdateProjectPayload; query?: GetProjectsParams },
   { rejectValue: string }
->("projects/updateProject", async ({ projectId, payload }, thunkAPI) => {
+>("projects/updateProject", async ({ projectId, payload, query }, thunkAPI) => {
   try {
     await projectsApi.updateProject(projectId, payload);
-    return await projectsApi.getProjects();
+    return await projectsApi.getProjects(query);
   } catch (error: unknown) {
     const message =
       (error as { response?: { data?: { message?: string } } })?.response?.data
