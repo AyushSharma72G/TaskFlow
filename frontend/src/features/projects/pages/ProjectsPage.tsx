@@ -94,7 +94,9 @@ export default function ProjectsPage() {
 
   const loadMoreProjects = useCallback(async () => {
     if (!nextCursor || loadingMore) return;
-    await dispatch(fetchProjects({ ...query, cursor: nextCursor, append: true }));
+    await dispatch(
+      fetchProjects({ ...query, cursor: nextCursor, append: true }),
+    );
   }, [dispatch, nextCursor, loadingMore, query]);
 
   useEffect(() => {
@@ -225,7 +227,7 @@ export default function ProjectsPage() {
 
   const cancelDelete = useCallback(() => setDeletingProject(null), []);
 
-  if (loading) {
+  if (loading && projects.length === 0) {
     return <Loader />;
   }
 
@@ -295,20 +297,35 @@ export default function ProjectsPage() {
       ) : null}
 
       {projects.length === 0 ? (
-        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">
-          <p className="max-w-md text-left text-[var(--color-text-secondary)]">
-            You don't have any projects yet. Create one to get started and begin
-            organizing your work.
-          </p>
-          <PrimaryButton
-            type="button"
-            className="mt-6"
-            onClick={openCreate}
-            icon={<Plus className="h-4 w-4" />}
-          >
-            New project
-          </PrimaryButton>
-        </div>
+        activeFilterCount > 0 ? (
+          <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+            <p className="text-[var(--color-text-secondary)]">
+              No projects match your filters.
+            </p>
+
+            <button
+              onClick={() => {
+                setSearchInput("");
+                setSearchQuery("");
+                setAppliedOwnerOnly(false);
+                setAppliedDueFilter("all");
+              }}
+              className="mt-4 text-sm text-[var(--color-primary)] hover:underline"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">
+            <p className="max-w-md text-left text-[var(--color-text-secondary)]">
+              You don't have any projects yet. Create one to get started.
+            </p>
+
+            <PrimaryButton type="button" className="mt-6" onClick={openCreate}>
+              New project
+            </PrimaryButton>
+          </div>
+        )
       ) : (
         <div className="space-y-4">
           <ul className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
