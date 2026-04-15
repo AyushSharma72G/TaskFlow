@@ -104,6 +104,18 @@
   @apply border-border bg-muted text-text-primary;
 }
 
+.form-validation-message {
+  @apply text-xs border rounded p-2 text-center;
+}
+
+.form-validation-message-error {
+  @apply bg-red-100 border-red-300 text-red-700;
+}
+
+.form-validation-message-info {
+  @apply bg-blue-50 border-blue-200 text-blue-700;
+}
+
 :root {
   --gradient-primary: linear-gradient(135deg, rgb(37 99 235), rgb(14 165 233));
 }

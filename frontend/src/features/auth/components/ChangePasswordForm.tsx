@@ -76,7 +76,7 @@ export default function ChangePasswordForm({
         label="Confirm New Password"
         value={confirmPassword}
         onChange={setConfirmPassword}
-        placeholder="Repeat new password"
+        placeholder="Confirm new password"
       />
 
       <button

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import AuthSubmitButton from "./AuthSubmitButton";
+import { getLoginValidationMessage, trimAuthInput } from "./authFormValidation";
+import FormValidationMessage from "./FormValidationMessage";
 import PasswordInput from "./PasswordInput";
 
 type LoginFormProps = {
@@ -10,33 +12,50 @@ type LoginFormProps = {
 export default function LoginForm({ loading = false, onSubmit }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
+  const { email: trimmedEmail, password: trimmedPassword } = trimAuthInput({
+    email,
+    password,
+  });
 
   const isValid = useMemo(
-    () => email.trim().includes("@") && password.trim().length >= 8,
-    [email, password],
+    () =>
+      getLoginValidationMessage({
+        email: trimmedEmail,
+        password: trimmedPassword,
+      }) === null,
+    [trimmedEmail, trimmedPassword],
   );
 
-  const validationMessage = useMemo(() => {
-    if (!email.trim()) return "Email is required.";
-    if (!email.trim().includes("@")) return "Enter a valid email address.";
-    if (!password.trim()) return "Password is required.";
-    if (password.trim().length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-    return null;
-  }, [email, password]);
+  const validationMessage = useMemo(
+    () =>
+      getLoginValidationMessage({
+        email: trimmedEmail,
+        password: trimmedPassword,
+      }),
+    [trimmedEmail, trimmedPassword],
+  );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setHasTriedSubmit(true);
     if (!isValid || loading) return;
-    onSubmit({ email: email.trim(), password: password.trim() });
+    onSubmit({ email: trimmedEmail, password: trimmedPassword });
   };
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <FormValidationMessage
+        message={hasTriedSubmit ? validationMessage : null}
+        variant="error"
+      />
+
       <div className="space-y-1.5">
         <label htmlFor="login-email" className="text-sm font-medium text-text-secondary">
           Email
+          <span className="text-danger">
+            *
+          </span>
         </label>
         <input
           id="login-email"
@@ -58,11 +77,7 @@ export default function LoginForm({ loading = false, onSubmit }: LoginFormProps)
         placeholder="Minimum 8 characters"
       />
 
-      {validationMessage ? (
-        <p className="text-xs text-text-secondary">{validationMessage}</p>
-      ) : null}
-
-      <AuthSubmitButton label="Login" loading={loading} disabled={!isValid} />
+      <AuthSubmitButton label="Login" loading={loading} disabled={loading} />
     </form>
   );
 }

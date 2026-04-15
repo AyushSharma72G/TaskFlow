@@ -3,6 +3,7 @@ import { AppLayout } from "../shared/components/layout/AppLayout";
 import ProtectedRoute from "../shared/components/guards/ProtectedRoute";
 import PublicOnlyRoute from "../shared/components/guards/PublicOnlyRoute";
 import AuthPage from "../features/auth/pages/AuthPage";
+import HomePage from "../features/home/pages/HomePage";
 import { lazy, Suspense } from "react";
 import NotFoundPage from "../shared/pages/NotFound";
 import Loader from "../shared/components/Loader";
@@ -18,7 +19,6 @@ const ActivityPage = lazy(
   () => import("../features/activity/pages/ActivityPage"),
 );
 const ProfilePage = lazy(() => import("../features/auth/pages/ProfilePage"));
-import HomePage from "../features/home/pages/HomePage";
 
 import AcceptInvitePage from "../features/invite/pages/AcceptInvitePage";
 
