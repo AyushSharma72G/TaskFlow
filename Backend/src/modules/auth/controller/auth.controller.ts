@@ -16,7 +16,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import type { Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { JwtCookieAuthGuard, type AuthRequest } from '../../../common/guards';
 import { AvatarUploadInterceptor } from '../../../common/interceptors';
 import { avatarFileValidationPipe } from '../../../common/pipes';
@@ -78,18 +78,8 @@ export class AuthController {
         @Res({ passthrough: true }) response: Response,
     ) {
         await this.authService.revokeRefreshToken(request.user.id);
-        response.clearCookie('access_token', {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: config.NODE_ENV === 'production',
-            path: '/',
-        });
-        response.clearCookie('refresh_token', {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: config.NODE_ENV === 'production',
-            path: '/',
-        });
+        response.clearCookie('access_token', this.getCookieOptions());
+        response.clearCookie('refresh_token', this.getCookieOptions());
         return {
             success: true,
             message: AUTH_MESSAGES.success.logoutSuccessful,
@@ -221,10 +211,7 @@ export class AuthController {
     ) {
         const oauthState = randomBytes(32).toString('hex');
         response.cookie('oauth_state', oauthState, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: config.NODE_ENV === 'production',
-            path: '/',
+            ...this.getCookieOptions(),
             maxAge: 10 * 60 * 1000,
         });
 
@@ -258,12 +245,7 @@ export class AuthController {
             provider,
             request,
         );
-        response.clearCookie('oauth_state', {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: config.NODE_ENV === 'production',
-            path: '/',
-        });
+        response.clearCookie('oauth_state', this.getCookieOptions());
         this.setAuthCookies(response, result.accessToken, result.refreshToken);
         return response.redirect(config.FRONTEND_URL);
     }
@@ -274,20 +256,26 @@ export class AuthController {
         refreshToken: string,
     ): void {
         response.cookie('access_token', accessToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: config.NODE_ENV === 'production',
-            path: '/',
+            ...this.getCookieOptions(),
             maxAge: this.parseDurationToMs(config.ACCESS_TOKEN_EXPIRES_IN),
         });
         response.cookie('refresh_token', refreshToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: config.NODE_ENV === 'production',
-            path: '/',
+            ...this.getCookieOptions(),
             maxAge: this.parseDurationToMs(config.REFRESH_TOKEN_EXPIRES_IN),
         });
     }
+
+    private getCookieOptions(): CookieOptions {
+        const isProduction = config.NODE_ENV === 'production';
+
+        return {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
+            path: '/',
+        };
+    }
+
     private parseDurationToMs(duration: string): number {
         const normalized = duration.trim();
         const match = normalized.match(/^(\d+)([smhd])$/i);
