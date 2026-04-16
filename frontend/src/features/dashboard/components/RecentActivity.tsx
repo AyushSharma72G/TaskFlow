@@ -32,11 +32,11 @@ const RecentActivity = () => {
 
   return (
     <div className="flex flex-col w-full">
-      <div className="flex justify-between w-full md:mt-10 mb-3 w-full items-center">
+      <div className="flex justify-between w-full  mb-3 w-full items-center">
         <p className="font-[var(--font-weight-subheading)]">Recent Activity</p>
         <p
           onClick={() => naviagte("/activity")}
-          className="cursor-pointer text-[var(--color-primary-light)]"
+          className="text-sm font-medium text-[var(--color-primary)] hover:underline"
         >
           View All
         </p>
@@ -59,7 +59,7 @@ const RecentActivity = () => {
         </div>
       ) : null}
 
-      {loading ? (
+      {loading && logs.length === 0 ? (
         <Loader />
       ) : logs.length === 0 ? (
         <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">

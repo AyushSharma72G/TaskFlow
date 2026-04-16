@@ -31,7 +31,7 @@ function normalizeId(id: string | undefined | null): string {
   return String(id ?? "").trim();
 }
 
-function projectProgress(p: ProjectListItem): number {
+export function projectProgress(p: ProjectListItem): number {
   if (p.totalTasks <= 0) return 0;
   return Math.round((p.completedTasks / p.totalTasks) * 100);
 }
