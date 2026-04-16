@@ -92,7 +92,9 @@ export default function ProjectCard({
   );
 
   const openProject = () => {
-    navigate(`/project/${project.id}`);
+    navigate(
+      `/project/${project.id}?name=${encodeURIComponent(project.title)}`,
+    );
   };
 
   const metaTitle =

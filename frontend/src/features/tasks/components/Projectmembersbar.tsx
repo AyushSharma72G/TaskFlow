@@ -6,13 +6,13 @@ import type { TaskUser } from "../types";
 
 type ProjectMembersBarProps = {
   members: TaskUser[];
-  loading: boolean;
+  memberloading: boolean;
   onInvite: (email: string) => Promise<void>;
 };
 
 export default function ProjectMembersBar({
   members,
-  loading,
+  memberloading,
   onInvite,
 }: ProjectMembersBarProps) {
   const [email, setEmail] = useState("");
@@ -67,7 +67,7 @@ export default function ProjectMembersBar({
           Members
         </span>
 
-        {loading ? (
+        {memberloading ? (
           <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
             <Loader2 size={14} className="animate-spin" />
             Loading…

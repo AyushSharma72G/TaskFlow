@@ -26,6 +26,7 @@ interface TasksState {
   taskloading: boolean;
   generatedDescription: string;
   filters: TaskFilters;
+  memberloading: boolean;
 }
 
 const initialState: TasksState = {
@@ -42,6 +43,7 @@ const initialState: TasksState = {
   inviteLoading: false,
   inviteSuccess: "",
   inviteError: "",
+  memberloading: false,
   generatedDescription: "",
   filters: {
     status: "ALL",
@@ -83,6 +85,7 @@ const tasksSlice = createSlice({
     clearSuccessError(state) {
       state.inviteSuccess = null;
     },
+
     setTaskStatusOptimistic(
       state,
       action: PayloadAction<{ taskId: string; status: TaskStatus }>,
@@ -138,25 +141,25 @@ const tasksSlice = createSlice({
 
       // createTask
       .addCase(createTask.pending, (state) => {
-        state.taskloading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(createTask.fulfilled, (state, action: PayloadAction<Task>) => {
-        state.taskloading = false;
+        state.loading = false;
         state.tasks.unshift(action.payload);
       })
       .addCase(createTask.rejected, (state, action) => {
-        state.taskloading = false;
+        state.loading = false;
         state.error = (action.payload as string) || "Something went wrong";
       })
 
       // updateTask
       .addCase(updateTask.pending, (state) => {
-        // state.loading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(updateTask.fulfilled, (state, action: PayloadAction<Task>) => {
-        // state.loading = false;
+        state.loading = false;
         state.tasks = state.tasks.map((task) =>
           task.id === action.payload.id ? action.payload : task,
         );
@@ -207,14 +210,14 @@ const tasksSlice = createSlice({
 
       // fetch members
       .addCase(fetchMembers.pending, (state) => {
-        state.loading = true;
+        state.memberloading = true;
       })
       .addCase(fetchMembers.fulfilled, (state, action) => {
-        state.loading = false;
+        state.memberloading = false;
         state.members = action.payload;
       })
       .addCase(fetchMembers.rejected, (state, action) => {
-        state.loading = false;
+        state.memberloading = false;
         state.error = action.payload || "Failed";
       })
       // invite member

@@ -46,26 +46,24 @@ export default function TaskForm({
 }: TaskFormProps) {
   const getTaskAssigneeIds = (task?: Task | null): string[] => {
     if (!task?.assignees?.length) return [];
-
     return task.assignees
       .map((assignee: any) => assignee.userId ?? assignee.user?.id ?? "")
       .filter((id: string) => typeof id === "string" && id.trim() !== "");
   };
 
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(
-    initialData?.description || "",
-  );
-  const [status, setStatus] = useState<TaskStatus>(
-    initialData?.status || "TODO",
-  );
-  const [priority, setPriority] = useState<TaskPriority>(
-    initialData?.priority || "MEDIUM",
-  );
+  const initialTitle = initialData?.title || "";
+  const initialDescription = initialData?.description || "";
+  const initialStatus: TaskStatus = initialData?.status || "TODO";
+  const initialPriority: TaskPriority = initialData?.priority || "MEDIUM";
+  const initialDueDate = initialData?.dueDate || "";
+  const initialAssigneeIds = getTaskAssigneeIds(initialData);
+
+  const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription);
+  const [status, setStatus] = useState<TaskStatus>(initialStatus);
+  const [priority, setPriority] = useState<TaskPriority>(initialPriority);
   const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
-  const [assigneeIds, setAssigneeIds] = useState<string[]>(
-    getTaskAssigneeIds(initialData),
-  );
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(initialAssigneeIds);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -88,6 +86,37 @@ export default function TaskForm({
     setErrors({});
   }, [initialData]);
 
+  const isFormChanged = useMemo(() => {
+    const normalizeDate = (d: string) => (d ? d.slice(0, 10) : "");
+
+    const assigneesChanged =
+      assigneeIds.length !== initialAssigneeIds.length ||
+      [...assigneeIds].sort().join(",") !==
+        [...initialAssigneeIds].sort().join(",");
+
+    return (
+      title.trim() !== initialTitle.trim() ||
+      description.trim() !== initialDescription.trim() ||
+      status !== initialStatus ||
+      priority !== initialPriority ||
+      normalizeDate(dueDate) !== normalizeDate(initialDueDate) ||
+      assigneesChanged
+    );
+  }, [
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    assigneeIds,
+    initialTitle,
+    initialDescription,
+    initialStatus,
+    initialPriority,
+    initialDueDate,
+    initialAssigneeIds,
+  ]);
+
   const assigneeOptions = useMemo<AssigneeOption[]>(
     () =>
       users.map((member: any) => ({
@@ -105,24 +134,20 @@ export default function TaskForm({
 
   const validateTitle = (value: string): string => {
     const trimmedValue = value.trim();
-
     if (!trimmedValue) return "Title is required";
     if (trimmedValue.length < 3) return "Title must be at least 3 characters";
     if (trimmedValue.length > 100)
       return "Title must not exceed 100 characters";
-
     return "";
   };
 
   const validateDescription = (value: string): string => {
     const trimmedValue = value.trim();
-
     if (!trimmedValue) return "";
     if (trimmedValue.length < 10)
       return "Description must be at least 10 characters";
     if (trimmedValue.length > 1000)
       return "Description must not exceed 1000 characters";
-
     return "";
   };
 
@@ -131,21 +156,16 @@ export default function TaskForm({
       title: validateTitle(title),
       description: validateDescription(description),
     };
-
     setErrors(newErrors);
-
     return !newErrors.title && !newErrors.description;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
     const cleanedAssigneeIds = assigneeIds.filter(
       (id): id is string => typeof id === "string" && id.trim() !== "",
     );
-
     onSubmit({
       title: title.trim(),
       description: description.trim(),
@@ -155,6 +175,8 @@ export default function TaskForm({
       dueDate: dueDate || null,
     });
   };
+
+  const isSubmitDisabled = loading || (!!initialData && !isFormChanged);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
@@ -190,10 +212,7 @@ export default function TaskForm({
               onChange={(e) => {
                 const value = e.target.value;
                 setTitle(value);
-                setErrors((prev) => ({
-                  ...prev,
-                  title: validateTitle(value),
-                }));
+                setErrors((prev) => ({ ...prev, title: validateTitle(value) }));
               }}
               placeholder="Enter task title"
             />
@@ -238,7 +257,6 @@ export default function TaskForm({
             <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
               Assignees
             </label>
-
             <Select<AssigneeOption, true>
               isMulti
               options={assigneeOptions}
@@ -308,7 +326,7 @@ export default function TaskForm({
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitDisabled}
               className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading

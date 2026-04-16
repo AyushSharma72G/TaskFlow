@@ -42,3 +42,5 @@ export const selectInviteSuccess = (state: RootState) =>
   state.tasks.inviteSuccess;
 
 export const selectInviteError = (state: RootState) => state.tasks.inviteError;
+export const selectMemberLoading = (state: RootState) =>
+  state.tasks.memberloading;
