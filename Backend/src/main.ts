@@ -12,12 +12,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
     app.enableCors({
-        // origin: config.FRONTEND_URL,
-        origin: [
-            'http://localhost:5173',
-            'https://task-flow-psi-ebon.vercel.app',
-            'https://task-flow-4rp3mipzd-ayushsharma72gs-projects.vercel.app',
-        ],
+        origin: config.FRONTEND_URL,
         credentials: true,
     });
     app.use(cookieParser());
