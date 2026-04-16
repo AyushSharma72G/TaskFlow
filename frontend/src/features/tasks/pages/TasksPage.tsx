@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { LayoutList, Kanban, Plus } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import TaskForm from "../components/TaskForm";
@@ -11,7 +11,7 @@ import Loader from "../../../shared/components/Loader";
 import ProjectMembersBar from "../components/Projectmembersbar";
 import { Filter } from "lucide-react";
 import { ErrorBanner } from "../components/ErrorBanner";
-import { SuccessBanner } from "../components/SuccessBanner";
+// import { SuccessBanner } from "../components/SuccessBanner";
 
 import type {
   Task,
@@ -33,6 +33,7 @@ import {
   selectTaskLoading,
   selectInviteError,
   selectInviteSuccess,
+  selectMemberLoading,
 } from "../store/tasksSelectors";
 import {
   clearGeneratedDescription,
@@ -73,6 +74,7 @@ export default function TasksPage() {
   const error = useAppSelector(selectTasksError);
   const filters = useAppSelector(selectTaskFilters);
   const aiLoading = useAppSelector(selectAiLoading);
+  const memberloading = useAppSelector(selectMemberLoading);
   const taskloading = useAppSelector(selectTaskLoading);
   const generatedDescription = useAppSelector(selectGeneratedDescription);
   const nextCursor = useAppSelector(selectNextCursor);
@@ -84,7 +86,8 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-
+  const [searchParams] = useSearchParams();
+  const projectName = searchParams.get("name");
   const activeFiltersCount = [
     filters.assigneeId !== "ALL",
     filters.status !== "ALL",
@@ -222,13 +225,7 @@ export default function TasksPage() {
   const handleInvite = async (email: string) => {
     if (!projectId) return;
 
-    const result = await dispatch(sendProjectInvite({ email, projectId }));
-
-    if (sendProjectInvite.fulfilled.match(result)) {
-      console.log("Invite sent:", result.payload.message);
-    } else {
-      console.error("Invite failed:", result.payload);
-    }
+    await dispatch(sendProjectInvite({ email, projectId }));
   };
 
   if (!projectId) {
@@ -245,7 +242,7 @@ export default function TasksPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {tasks[0]?.project?.title}
+            {projectName}
           </h1>
 
           <div className="flex items-center gap-3">
@@ -286,7 +283,7 @@ export default function TasksPage() {
         {/* Members bar avatars + invite */}
         <ProjectMembersBar
           members={members}
-          loading={loading}
+          memberloading={memberloading}
           onInvite={handleInvite}
         />
 
@@ -325,8 +322,8 @@ export default function TasksPage() {
         {/* Error banner */}
         {error ? <ErrorBanner error={error} /> : null}
 
-        {inviteError ? <ErrorBanner error={inviteError} /> : null}
-        {inviteSuccess ? <SuccessBanner success={inviteSuccess} /> : null}
+        {/* {inviteError ? <ErrorBanner error={inviteError} /> : null}
+        {inviteSuccess ? <SuccessBanner success={inviteSuccess} /> : null} */}
 
         {/* Task list / kanban */}
         {taskloading ? (
