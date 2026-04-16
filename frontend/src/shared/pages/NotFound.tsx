@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import notFoundPageImage from '../../../public/images/notFoundPageImg.svg'
 import { House, ArrowLeft } from 'lucide-react';
 
 
@@ -9,7 +8,7 @@ const NotFoundPage = ()=>{
     return(
         <div className="flex justify-center align-center">
             <div className="flex flex-col justify-center align-center w-[600px] h-[500px]  bg-[var(--color-surface)]">
-            <img src={notFoundPageImage} width={200} className="m-auto"/>
+            <img src="/images/notFoundPageImg.svg" width={200} className="m-auto"/>
            
            <div className="text-[var(--color-text-secondary)] text-center font-[var(--font-weight-heading)] text-xl ">
              <p>404</p>

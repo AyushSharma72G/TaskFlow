@@ -296,7 +296,7 @@ export default function ProjectsPage() {
         </div>
       ) : null}
 
-      {projects.length === 0 ? (
+      {projects?.length === 0 ? (
         activeFilterCount > 0 ? (
           <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
             <p className="text-[var(--color-text-secondary)]">
