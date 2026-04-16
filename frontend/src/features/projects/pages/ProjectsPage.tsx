@@ -139,6 +139,9 @@ export default function ProjectsPage() {
     const handleClickOutside = (event: MouseEvent) => {
       if (!filterMenuRef.current) return;
       if (filterMenuRef.current.contains(event.target as Node)) return;
+
+      setDraftOwnerOnly(appliedOwnerOnly);
+      setDraftDueFilter(appliedDueFilter);
       setFiltersOpen(false);
     };
 
@@ -227,7 +230,7 @@ export default function ProjectsPage() {
 
   const cancelDelete = useCallback(() => setDeletingProject(null), []);
 
-  if (loading && projects.length === 0) {
+  if (loading && projects.length === 0 && !error) {
     return <Loader />;
   }
 
@@ -296,72 +299,84 @@ export default function ProjectsPage() {
         </div>
       ) : null}
 
-      {projects?.length === 0 ? (
-        activeFilterCount > 0 ? (
-          <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-            <p className="text-[var(--color-text-secondary)]">
-              No projects match your filters.
-            </p>
-
-            <button
-              onClick={() => {
-                setSearchInput("");
-                setSearchQuery("");
-                setAppliedOwnerOnly(false);
-                setAppliedDueFilter("all");
-              }}
-              className="mt-4 text-sm text-[var(--color-primary)] hover:underline"
-            >
-              Clear filters
-            </button>
+      <div className="relative min-h-[200px]">
+        {loading && projects.length > 0 && (
+          <div className="absolute -top-2 right-0 z-20 flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-primary)] shadow-sm border border-[var(--color-border)]">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+            Updating results...
           </div>
-        ) : (
-          <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">
-            <p className="max-w-md text-left text-[var(--color-text-secondary)]">
-              You don't have any projects yet. Create one to get started.
-            </p>
-
-            <PrimaryButton type="button" className="mt-6" onClick={openCreate}>
-              New project
-            </PrimaryButton>
-          </div>
-        )
-      ) : (
-        <div className="space-y-4">
-          <ul className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-            {projects.map((project) => (
-              <li key={project.id} className="w-full">
-                <ProjectCard
-                  className="w-full"
-                  project={project}
-                  progressPercent={projectProgress(project)}
-                  canManage={canManageProject(project)}
-                  onEdit={openEdit}
-                  onDelete={requestDelete}
-                />
-              </li>
-            ))}
-          </ul>
-
-          {loadingMore ? (
-            <div
-              className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]"
-              aria-live="polite"
-              aria-label="Loading more projects"
-            >
-              <div className="h-1.5 w-full bg-[var(--color-muted)]">
-                <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[var(--color-primary)]/20 via-[var(--color-primary)] to-[var(--color-secondary)]/30" />
+        )}
+        <div
+          className={`transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : "opacity-100"}`}
+        >
+          {projects.length === 0 ? (
+            activeFilterCount > 0 ? (
+              <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+                <p className="text-[var(--color-text-secondary)]">
+                  No projects match your filters.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearchQuery("");
+                    setAppliedOwnerOnly(false);
+                    setAppliedDueFilter("all");
+                  }}
+                  className="mt-4 text-sm text-[var(--color-primary)] hover:underline"
+                >
+                  Clear filters
+                </button>
               </div>
-              <div className="px-3 py-2 text-center text-xs font-medium text-[var(--color-text-muted)]">
-                Loading more projects...
+            ) : (
+              <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">
+                <p className="max-w-md text-left text-[var(--color-text-secondary)]">
+                  You don't have any projects yet. Create one to get started.
+                </p>
+                <PrimaryButton
+                  type="button"
+                  className="mt-6"
+                  onClick={openCreate}
+                >
+                  New project
+                </PrimaryButton>
               </div>
+            )
+          ) : (
+            <div className="space-y-4">
+              <ul className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+                {projects.map((project) => (
+                  <li key={project.id} className="w-full">
+                    <ProjectCard
+                      className="w-full"
+                      project={project}
+                      progressPercent={projectProgress(project)}
+                      canManage={canManageProject(project)}
+                      onEdit={openEdit}
+                      onDelete={requestDelete}
+                    />
+                  </li>
+                ))}
+              </ul>
+
+              {loadingMore ? (
+                <div
+                  className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]"
+                  aria-live="polite"
+                >
+                  <div className="h-1.5 w-full bg-[var(--color-muted)]">
+                    <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[var(--color-primary)]/20 via-[var(--color-primary)] to-[var(--color-secondary)]/30" />
+                  </div>
+                  <div className="px-3 py-2 text-center text-xs font-medium text-[var(--color-text-muted)]">
+                    Loading more projects...
+                  </div>
+                </div>
+              ) : null}
+
+              <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
             </div>
-          ) : null}
-
-          <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
+          )}
         </div>
-      )}
-
+      </div>
       {formOpen ? (
         <ProjectFormModal
           mode={formMode}
