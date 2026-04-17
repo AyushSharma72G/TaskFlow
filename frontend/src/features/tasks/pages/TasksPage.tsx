@@ -210,7 +210,7 @@ export default function TasksPage() {
 
     dispatch(setTaskStatusOptimistic({ taskId, status }));
 
-    dispatch(updateTask({ taskId, payload: { status } }))
+    dispatch(updateTask({ taskId, payload: { status } })) // call the update api 
       .unwrap()
       .catch(() => {
         dispatch(
@@ -225,7 +225,7 @@ export default function TasksPage() {
   const handleInvite = async (email: string) => {
     if (!projectId) return;
 
-    await dispatch(sendProjectInvite({ email, projectId }));
+    await dispatch(sendProjectInvite({ email, projectId })).unwrap();
   };
 
   if (!projectId) {
