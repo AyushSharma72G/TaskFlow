@@ -64,9 +64,7 @@ export default function ProjectsPage() {
   const [draftDueFilter, setDraftDueFilter] = useState<ProjectDueFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilterCount =
-    (searchQuery ? 1 : 0) +
-    (appliedOwnerOnly ? 1 : 0) +
-    (appliedDueFilter !== "all" ? 1 : 0);
+    (appliedOwnerOnly ? 1 : 0) + (appliedDueFilter !== "all" ? 1 : 0);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
 
   const query = useMemo(
@@ -236,57 +234,56 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
             Projects
           </h1>
-          <p className="mt-1 text-[var(--color-text-secondary)]">
-            Create, manage, and collaborate on your projects. Only the project
-            owner can edit or delete a project.
-          </p>
-        </div>
-        <PrimaryButton
-          type="button"
-          onClick={openCreate}
-          icon={<Plus className="h-4 w-4" />}
-          className="shrink-0"
-        >
-          New project
-        </PrimaryButton>
-      </div>
 
-      <div className="relative" ref={filterMenuRef}>
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <ProjectsSearchBar
-            value={searchInput}
-            onChange={setSearchInput}
-            onSearch={() => setSearchQuery(searchInput.trim())}
-            className="w-full sm:w-[28rem] sm:max-w-[65vw] sm:flex-none"
-          />
+          <div className="flex flex-1 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <ProjectsSearchBar
+              value={searchInput}
+              onChange={setSearchInput}
+              onSearch={(forcedValue?: string) => {
+                const term =
+                  typeof forcedValue === "string" ? forcedValue : searchInput;
+                setSearchQuery(term.trim());
+              }}
+              className="w-full sm:w-[24rem]"
+            />
 
-          <ProjectsFilterMenu
-            filtersOpen={filtersOpen}
-            activeFilterCount={activeFilterCount}
-            ownerOnly={draftOwnerOnly}
-            dueFilter={draftDueFilter}
-            onToggleFilters={() => setFiltersOpen((open) => !open)}
-            onOwnerOnlyChange={setDraftOwnerOnly}
-            onDueFilterChange={setDraftDueFilter}
-            onClearAll={() => {
-              setSearchInput("");
-              setSearchQuery("");
-              setDraftOwnerOnly(false);
-              setDraftDueFilter("all");
-              setAppliedOwnerOnly(false);
-              setAppliedDueFilter("all");
-            }}
-            onDone={() => {
-              setAppliedOwnerOnly(draftOwnerOnly);
-              setAppliedDueFilter(draftDueFilter);
-              setFiltersOpen(false);
-            }}
-          />
+            <div className="relative" ref={filterMenuRef}>
+              <ProjectsFilterMenu
+                filtersOpen={filtersOpen}
+                activeFilterCount={activeFilterCount}
+                ownerOnly={draftOwnerOnly}
+                dueFilter={draftDueFilter}
+                onToggleFilters={() => setFiltersOpen((open) => !open)}
+                onOwnerOnlyChange={setDraftOwnerOnly}
+                onDueFilterChange={setDraftDueFilter}
+                onClearAll={() => {
+                  setDraftOwnerOnly(false);
+                  setDraftDueFilter("all");
+                  setAppliedOwnerOnly(false);
+                  setAppliedDueFilter("all");
+                }}
+                onDone={() => {
+                  setAppliedOwnerOnly(draftOwnerOnly);
+                  setAppliedDueFilter(draftDueFilter);
+                  setFiltersOpen(false);
+                }}
+              />
+            </div>
+
+            <PrimaryButton
+              type="button"
+              onClick={openCreate}
+              icon={<Plus className="h-4 w-4" />}
+              className="shrink-0"
+            >
+              New project
+            </PrimaryButton>
+          </div>
         </div>
       </div>
 
