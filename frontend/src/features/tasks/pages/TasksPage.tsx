@@ -330,7 +330,7 @@ export default function TasksPage() {
           <TaskDetailModal
             task={viewingTask}
             onClose={() => setViewingTask(null)}
-            onEdit={handleEditTask}
+            // onEdit={handleEditTask}
           />
         )}
         {/* Task list / kanban */}

@@ -40,10 +40,12 @@ function TaskSortableCard({
   task,
   onEdit,
   onDelete,
+  onView,
 }: {
   task: Task;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
+  onView?: (task: Task) => void;
 }) {
   const {
     attributes,
@@ -68,7 +70,12 @@ function TaskSortableCard({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onEdit={onEdit} onDelete={onDelete} />
+      <TaskCard
+        task={task}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onView={onView}
+      />
     </div>
   );
 }
@@ -77,12 +84,14 @@ function KanbanColumn({
   status,
   tasks,
   onEdit,
+  onView,
   onDelete,
 }: {
   status: TaskStatus;
   tasks: Task[];
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
+  onView?: (task: Task) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
@@ -117,6 +126,7 @@ function KanbanColumn({
                 task={task}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onView={onView}
               />
             ))
           ) : (
@@ -247,6 +257,7 @@ export default function KanbanBoard({
             key={status}
             status={status}
             tasks={tasksByColumn[status]}
+            onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}
           />

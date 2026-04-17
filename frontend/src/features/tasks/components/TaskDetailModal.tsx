@@ -32,10 +32,9 @@ function formatDate(dateStr?: string | null) {
 type Props = {
   task: Task;
   onClose: () => void;
-  onEdit: (task: Task) => void;
 };
 
-export default function TaskDetailModal({ task, onClose, onEdit }: Props) {
+export default function TaskDetailModal({ task, onClose }: Props) {
   const status = STATUS_CONFIG[task.status] ?? {
     label: task.status,
     bg: "#3B82F6",
