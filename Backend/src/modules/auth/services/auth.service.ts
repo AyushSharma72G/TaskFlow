@@ -1,4 +1,5 @@
 import { readFile, unlink } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import {
     BadRequestException,
     ConflictException,
@@ -27,13 +28,63 @@ import { OAuthProviderRegistry } from '../oauth-provider.registry';
 import type { NormalisedUser } from '../interfaces/oauth-provider.interface';
 import { AuthBusinessValidator } from '../validators/auth-business.validator';
 
+type OAuthExchangeSession = {
+    user: SafeUser;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+};
+
+const OAUTH_EXCHANGE_CODE_TTL_MS = 60 * 1000;
+
 @Injectable()
 export class AuthService {
+    private readonly oauthExchangeSessions = new Map<string, OAuthExchangeSession>();
+
     constructor(
         private readonly authRepository: AuthRepository,
         private readonly providerRegistry: OAuthProviderRegistry,
         private readonly authBusinessValidator: AuthBusinessValidator,
     ) {}
+
+    createOAuthExchangeCode(session: {
+        user: SafeUser;
+        accessToken: string;
+        refreshToken: string;
+    }): string {
+        const code = randomBytes(32).toString('hex');
+        const expiresAt = Date.now() + OAUTH_EXCHANGE_CODE_TTL_MS;
+
+        this.oauthExchangeSessions.set(code, {
+            user: session.user,
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            expiresAt,
+        });
+
+        return code;
+    }
+
+    consumeOAuthExchangeCode(code: string): {
+        user: SafeUser;
+        accessToken: string;
+        refreshToken: string;
+    } {
+        const session = this.oauthExchangeSessions.get(code);
+        this.oauthExchangeSessions.delete(code);
+
+        if (!session || session.expiresAt < Date.now()) {
+            throw new UnauthorizedException(
+                AUTH_MESSAGES.errors.invalidOrExpiredToken,
+            );
+        }
+
+        return {
+            user: session.user,
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+        };
+    }
 
     initiateOAuth(providerName: string, state?: string): string {
         const provider = this.providerRegistry.get(providerName);

@@ -11,8 +11,18 @@ async function bootstrap() {
     const logger = new Logger('Bootstrap');
     const app = await NestFactory.create(AppModule);
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
+    const normalizedFrontendOrigin = config.FRONTEND_URL.trim().replace(/\/+$/, '');
+    const allowedOrigins = [normalizedFrontendOrigin, 'http://localhost:5173'];
+
     app.enableCors({
-        origin: config.FRONTEND_URL,
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+                return;
+            }
+            callback(new Error(`Origin ${origin} not allowed by CORS`));
+        },
         credentials: true,
     });
     app.use(cookieParser());

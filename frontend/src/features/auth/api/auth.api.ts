@@ -29,6 +29,11 @@ export const authApi = {
     await api.post("/auth/refresh");
   },
 
+  async exchangeOAuthCode(code: string): Promise<AuthUser> {
+    const response = await api.post<AuthApiResponse<AuthUser>>("/auth/oauth/exchange", { code });
+    return response.data.data;
+  },
+
   async getProfile(): Promise<AuthUser> {
     const response = await api.get<AuthApiResponse<AuthUser>>("/auth/profile");
     return response.data.data;
