@@ -13,4 +13,8 @@ export const store = configureStore({
 });
 
 export type RootState = ReturnType<typeof store.getState>;
+//  Take whatever shape store.getState() returns
+// Use that as the type of the full Redux state
 export type AppDispatch = typeof store.dispatch;
+
+// this file makes a global store for all the states in the application like tasks,auth etc

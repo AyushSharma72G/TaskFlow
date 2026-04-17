@@ -12,6 +12,7 @@ import ProjectMembersBar from "../components/Projectmembersbar";
 import { Filter } from "lucide-react";
 import { ErrorBanner } from "../components/ErrorBanner";
 // import { SuccessBanner } from "../components/SuccessBanner";
+import TaskDetailModal from "../components/TaskDetailModal";
 
 import type {
   Task,
@@ -87,6 +88,7 @@ export default function TasksPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [searchParams] = useSearchParams();
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const projectName = searchParams.get("name");
   const activeFiltersCount = [
     filters.assigneeId !== "ALL",
@@ -210,7 +212,7 @@ export default function TasksPage() {
 
     dispatch(setTaskStatusOptimistic({ taskId, status }));
 
-    dispatch(updateTask({ taskId, payload: { status } })) // call the update api 
+    dispatch(updateTask({ taskId, payload: { status } })) // call the update api
       .unwrap()
       .catch(() => {
         dispatch(
@@ -324,7 +326,13 @@ export default function TasksPage() {
 
         {/* {inviteError ? <ErrorBanner error={inviteError} /> : null}
         {inviteSuccess ? <SuccessBanner success={inviteSuccess} /> : null} */}
-
+        {viewingTask && (
+          <TaskDetailModal
+            task={viewingTask}
+            onClose={() => setViewingTask(null)}
+            onEdit={handleEditTask}
+          />
+        )}
         {/* Task list / kanban */}
         {taskloading ? (
           <div className="flex items-center justify-center p-10 text-xl text-[var(--color-text-secondary)]">
@@ -337,12 +345,14 @@ export default function TasksPage() {
         ) : view === "list" ? (
           <TaskList
             tasks={tasks}
+            onView={setViewingTask}
             onEdit={handleEditTask}
             onDelete={(taskId) => dispatch(deleteTask(taskId))}
           />
         ) : (
           <KanbanBoard
             tasks={tasks}
+            onView={setViewingTask}
             onEdit={handleEditTask}
             onDelete={(taskId) => dispatch(deleteTask(taskId))}
             onStatusChange={handleKanbanStatusChange}
