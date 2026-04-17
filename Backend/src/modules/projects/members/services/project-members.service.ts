@@ -25,12 +25,6 @@ export class ProjectMembersService {
         projectId: string,
         dto: InviteMemberDto,
     ): Promise<ProjectMember> {
-        const role = await this.repo.findUserRoleInProject(userId, projectId);
-
-        if (!role) throw new NotFoundException('Project not found');
-        if (role !== Role.OWNER)
-            throw new ForbiddenException('Only owner can invite');
-
         const user = await this.repo.findUserByEmail(dto.email);
         if (!user) throw new BadRequestException('User not found');
 
