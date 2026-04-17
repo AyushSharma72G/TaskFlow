@@ -65,6 +65,19 @@ export const fetchProfileThunk = createAsyncThunk(
   },
 );
 
+export const exchangeOAuthCodeThunk = createAsyncThunk(
+  "auth/exchangeOAuthCode",
+  async (code: string, thunkAPI) => {
+    try {
+      return await authApi.exchangeOAuthCode(code);
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        getErrorMessage(error, "Failed to exchange oauth code"),
+      );
+    }
+  },
+);
+
 export const logoutThunk = createAsyncThunk(
   "auth/logout",
   async (_, thunkAPI) => {
