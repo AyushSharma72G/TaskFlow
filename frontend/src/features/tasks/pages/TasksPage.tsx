@@ -240,12 +240,12 @@ export default function TasksPage() {
     <div className="h-screen">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4">
+
+        <div className="flex items-center gap-3 flex-wrap justify-between">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
             {projectName}
           </h1>
-
-          <div className="flex items-center gap-3">
+          <div className="flex gap-4">
             {/* View toggle */}
             <div className="flex items-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
               <button

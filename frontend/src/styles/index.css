@@ -131,3 +131,27 @@ body {
   background: var(--color-bg);
   color: var(--color-text-primary);
 }
+
+.task-form {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.task-form::-webkit-scrollbar {
+  display: none;
+}
+.status-dot {
+  @apply w-2.5 h-2.5 rounded-full inline-block;
+}
+
+.todoDot {
+  background-color: rgb(59 130 246); /* stone-400 */
+}
+
+.inProgressDot {
+  background-color: rgb(173, 86, 9); /* blue-500 */
+}
+
+.doneDot {
+  background-color: rgb(34 197 94); /* green-500 */
+}
