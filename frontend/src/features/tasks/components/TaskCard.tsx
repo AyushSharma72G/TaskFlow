@@ -7,9 +7,15 @@ interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
+  onView?: (task: Task) => void;
 }
 
-export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onEdit,
+  onView,
+  onDelete,
+}: TaskCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const statusConfig: Record<
@@ -71,7 +77,10 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 transition-colors hover:border-gray-300">
+      <div
+        className="bg-white border border-gray-200 rounded-2xl p-5 transition-colors hover:border-gray-300"
+        onClick={() => onView?.(task)}
+      >
         <div className="flex items-start justify-between gap-4 ">
           <div className="flex flex-col gap-2 min-w-0 w-full">
             <div className="flex flex-wrap justify-between items-center gap-2 mb-2 ">
@@ -95,15 +104,22 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => onEdit?.(task)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(task);
+                  }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
                   <Pencil size={12} />
                   Edit
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setShowDeleteModal(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteModal(true);
+                  }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
                 >
                   <Trash2 size={12} />

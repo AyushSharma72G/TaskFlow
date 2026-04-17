@@ -25,6 +25,7 @@ interface KanbanBoardProps {
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onView?: (task: Task) => void;
 }
 
 const columns: TaskStatus[] = ["TODO", "IN_PROGRESS", "DONE"];
@@ -133,6 +134,7 @@ export default function KanbanBoard({
   tasks,
   onEdit,
   onDelete,
+  onView,
   onStatusChange,
 }: KanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
