@@ -3,6 +3,7 @@ import { AppLayout } from "../shared/components/layout/AppLayout";
 import ProtectedRoute from "../shared/components/guards/ProtectedRoute";
 import PublicOnlyRoute from "../shared/components/guards/PublicOnlyRoute";
 import AuthPage from "../features/auth/pages/AuthPage";
+import AuthCallbackPage from "../features/auth/pages/AuthCallbackPage";
 import HomePage from "../features/home/pages/HomePage";
 import { lazy, Suspense } from "react";
 import NotFoundPage from "../shared/pages/NotFound";
@@ -23,6 +24,10 @@ const ProfilePage = lazy(() => import("../features/auth/pages/ProfilePage"));
 import AcceptInvitePage from "../features/invite/pages/AcceptInvitePage";
 
 export const router = createBrowserRouter([
+  {
+    path: "/auth/callback",
+    element: <AuthCallbackPage />,
+  },
   {
     path: "/auth",
     element: (

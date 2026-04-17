@@ -14,7 +14,7 @@ export const api = axios.create(axiosConfig);
 const refreshClient = axios.create(axiosConfig);
 
 let refreshPromise: Promise<void> | null = null;
-const noRefreshEndpoints = ["/auth/login", "/auth/register", "/auth/refresh"];
+const noRefreshEndpoints = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/oauth/exchange"];
 
 const startsWithAny = (value: string, prefixes: string[]): boolean =>
   prefixes.some((prefix) => value.startsWith(prefix));

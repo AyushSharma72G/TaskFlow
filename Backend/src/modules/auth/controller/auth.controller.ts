@@ -246,8 +246,33 @@ export class AuthController {
             request,
         );
         response.clearCookie('oauth_state', this.getCookieOptions());
-        this.setAuthCookies(response, result.accessToken, result.refreshToken);
-        return response.redirect(config.FRONTEND_URL);
+        const code = this.authService.createOAuthExchangeCode(result);
+        const callbackUrl = `${config.FRONTEND_URL}/auth/callback?code=${encodeURIComponent(code)}`;
+        return response.redirect(callbackUrl);
+    }
+
+    @Post('oauth/exchange')
+    async exchangeOAuthCode(
+        @Body('code') code: string,
+        @Res({ passthrough: true }) response: Response,
+    ) {
+        if (!code?.trim()) {
+            throw new BadRequestException(AUTH_MESSAGES.errors.invalidTokenPayload);
+        }
+
+        const {
+            user,
+            accessToken,
+            refreshToken,
+        } = this.authService.consumeOAuthExchangeCode(code.trim());
+
+        this.setAuthCookies(response, accessToken, refreshToken);
+
+        return {
+            success: true,
+            message: AUTH_MESSAGES.success.loginSuccessful,
+            data: user,
+        };
     }
 
     private setAuthCookies(

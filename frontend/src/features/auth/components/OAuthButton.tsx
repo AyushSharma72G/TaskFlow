@@ -18,7 +18,7 @@ const labels: Record<OAuthMode, Record<OAuthProviderName, string>> = {
 };
 
 export default function OAuthButton({ provider, mode = 'login' }: OAuthButtonProps) {
-  const backend = import.meta.env.VITE_API_BASE_URL;
+  const backend = String(import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
   const href = `${backend}/auth/${provider}`;
 
   return (
