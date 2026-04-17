@@ -18,18 +18,18 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   > = {
     TODO: {
       label: "Todo",
-      className: "bg-stone-100 text-stone-600 border-stone-200",
-      dot: "bg-stone-400",
+      className: "status-todo",
+      dot: "todoDot",
     },
     IN_PROGRESS: {
       label: "In Progress",
-      className: "bg-blue-50 text-blue-700 border-blue-200",
-      dot: "bg-blue-500",
+      className: "status-in-progress",
+      dot: "inProgressDot",
     },
     DONE: {
       label: "Done",
-      className: "bg-green-50 text-green-700 border-green-200",
-      dot: "bg-green-500",
+      className: "status-done",
+      dot: "doneDot",
     },
   };
 
@@ -39,15 +39,15 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   > = {
     LOW: {
       label: "Low priority",
-      className: "bg-green-50 text-green-700 border-green-200",
+      className: "priority-low",
     },
     MEDIUM: {
       label: "Medium priority",
-      className: "bg-amber-50 text-amber-700 border-amber-200",
+      className: "priority-medium",
     },
     HIGH: {
       label: "High priority",
-      className: "bg-red-50 text-red-700 border-red-200",
+      className: "priority-high",
     },
   };
 

@@ -12,7 +12,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
     app.enableCors({
-        origin: config.FRONTEND_URL || 'http://localhost:5173',
+        origin: config.FRONTEND_URL,
         credentials: true,
     });
     app.use(cookieParser());
