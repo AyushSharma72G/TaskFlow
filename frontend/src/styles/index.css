@@ -131,3 +131,12 @@ body {
   background: var(--color-bg);
   color: var(--color-text-primary);
 }
+
+.task-form {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.task-form::-webkit-scrollbar {
+  display: none;
+}

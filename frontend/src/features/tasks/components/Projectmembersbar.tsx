@@ -88,7 +88,7 @@ export default function ProjectMembersBar({
 
       {/* Invite by email */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div
             className={`flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm transition ${
               inviteError
