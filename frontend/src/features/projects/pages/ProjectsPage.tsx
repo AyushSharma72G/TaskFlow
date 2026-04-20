@@ -67,6 +67,26 @@ export default function ProjectsPage() {
     (appliedOwnerOnly ? 1 : 0) + (appliedDueFilter !== "all" ? 1 : 0);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
 
+  const suggestions = useMemo(() => {
+    if (searchInput.trim().length < 2) return [];
+
+    return projects
+      .filter((p) => p.title.toLowerCase().includes(searchInput.toLowerCase()))
+      .slice(0, 5);
+  }, [projects, searchInput]);
+
+  useEffect(() => {
+    if (searchInput === "") {
+      setSearchQuery("");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const query = useMemo(
     () => ({
       limit: 10,
@@ -98,28 +118,17 @@ export default function ProjectsPage() {
   }, [dispatch, nextCursor, loadingMore, query]);
 
   useEffect(() => {
-    if (!loadMoreRef.current) return;
-    if (!nextCursor) return;
-
+    if (!loadMoreRef.current || !nextCursor) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        const [entry] = entries;
-        if (!entry?.isIntersecting) return;
-        if (loadingMore || !nextCursor) return;
-        void loadMoreProjects();
+        if (entries[0]?.isIntersecting && !loadingMore && nextCursor) {
+          void loadMoreProjects();
+        }
       },
-      {
-        root: null,
-        rootMargin: "160px 0px",
-        threshold: 0,
-      },
+      { rootMargin: "160px 0px" },
     );
-
     observer.observe(loadMoreRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [loadMoreProjects, loadingMore, nextCursor]);
 
   useEffect(() => {
@@ -130,107 +139,69 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     if (!filtersOpen) return;
-
-    setDraftOwnerOnly(appliedOwnerOnly);
-    setDraftDueFilter(appliedDueFilter);
-
     const handleClickOutside = (event: MouseEvent) => {
-      if (!filterMenuRef.current) return;
-      if (filterMenuRef.current.contains(event.target as Node)) return;
-
-      setDraftOwnerOnly(appliedOwnerOnly);
-      setDraftDueFilter(appliedDueFilter);
-      setFiltersOpen(false);
+      if (
+        filterMenuRef.current &&
+        !filterMenuRef.current.contains(event.target as Node)
+      ) {
+        setFiltersOpen(false);
+      }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [filtersOpen, appliedOwnerOnly, appliedDueFilter]);
+  }, [filtersOpen]);
 
-  const openCreate = useCallback(() => {
+  const openCreate = () => {
     setFormMode("create");
     setEditingProject(null);
     setFormOpen(true);
-  }, []);
-
-  const openEdit = useCallback(
-    (project: ProjectListItem) => {
-      if (!canManageProject(project)) return;
-      setFormMode("edit");
-      setEditingProject(project);
-      setFormOpen(true);
-    },
-    [canManageProject],
-  );
-
-  const closeForm = useCallback(() => {
+  };
+  const openEdit = (p: ProjectListItem) => {
+    if (!canManageProject(p)) return;
+    setFormMode("edit");
+    setEditingProject(p);
+    setFormOpen(true);
+  };
+  const closeForm = () => {
     setFormOpen(false);
     setEditingProject(null);
-  }, []);
+  };
+  const requestDelete = (p: ProjectListItem) => {
+    if (canManageProject(p)) setDeletingProject(p);
+  };
 
-  const requestDelete = useCallback(
-    (project: ProjectListItem) => {
-      if (!canManageProject(project)) return;
-      setDeletingProject(project);
-    },
-    [canManageProject],
-  );
-
-  const handleFormSubmit = useCallback(
-    async (values: ProjectFormValues) => {
-      setFormSubmitting(true);
-      try {
-        if (formMode === "create") {
-          await dispatch(
-            createProject({
-              payload: {
-                title: values.title,
-                description: values.description || undefined,
-                dueDate: values.dueDate,
-              },
-              query,
-            }),
-          ).unwrap();
-        } else if (editingProject) {
-          if (!canManageProject(editingProject)) return;
-          await dispatch(
-            updateProject({
-              projectId: editingProject.id,
-              payload: {
-                title: values.title,
-                description: values.description,
-                dueDate: values.dueDate,
-              },
-              query,
-            }),
-          ).unwrap();
-        }
-        closeForm();
-      } catch {
-      } finally {
-        setFormSubmitting(false);
+  const handleFormSubmit = async (values: ProjectFormValues) => {
+    setFormSubmitting(true);
+    try {
+      if (formMode === "create") {
+        await dispatch(createProject({ payload: values, query })).unwrap();
+      } else if (editingProject) {
+        await dispatch(
+          updateProject({
+            projectId: editingProject.id,
+            payload: values,
+            query,
+          }),
+        ).unwrap();
       }
-    },
-    [dispatch, formMode, editingProject, closeForm, canManageProject, query],
-  );
+      closeForm();
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
 
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deletingProject || !canManageProject(deletingProject)) return;
+  const handleConfirmDelete = async () => {
+    if (!deletingProject) return;
     setDeleteSubmitting(true);
     try {
       await dispatch(deleteProject(deletingProject.id)).unwrap();
       setDeletingProject(null);
-    } catch {
     } finally {
       setDeleteSubmitting(false);
     }
-  }, [dispatch, deletingProject, canManageProject]);
+  };
 
-  const cancelDelete = useCallback(() => setDeletingProject(null), []);
-
-  if (loading && projects.length === 0 && !error) {
-    return <Loader />;
-  }
+  if (loading && projects.length === 0 && !error) return <Loader />;
 
   return (
     <div className="space-y-6">
@@ -244,6 +215,7 @@ export default function ProjectsPage() {
             <ProjectsSearchBar
               value={searchInput}
               onChange={setSearchInput}
+              suggestions={suggestions}
               onSearch={(forcedValue?: string) => {
                 const term =
                   typeof forcedValue === "string" ? forcedValue : searchInput;
@@ -258,7 +230,7 @@ export default function ProjectsPage() {
                 activeFilterCount={activeFilterCount}
                 ownerOnly={draftOwnerOnly}
                 dueFilter={draftDueFilter}
-                onToggleFilters={() => setFiltersOpen((open) => !open)}
+                onToggleFilters={() => setFiltersOpen(!filtersOpen)}
                 onOwnerOnlyChange={setDraftOwnerOnly}
                 onDueFilterChange={setDraftDueFilter}
                 onClearAll={() => {
@@ -287,14 +259,11 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {error ? (
-        <div
-          className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-          role="alert"
-        >
+      {error && (
+        <div className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
         </div>
-      ) : null}
+      )}
 
       <div className="relative min-h-[200px]">
         {loading && projects.length > 0 && (
@@ -307,44 +276,28 @@ export default function ProjectsPage() {
           className={`transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : "opacity-100"}`}
         >
           {projects.length === 0 ? (
-            activeFilterCount > 0 ? (
-              <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-                <p className="text-[var(--color-text-secondary)]">
-                  No projects match your filters.
-                </p>
-                <button
-                  onClick={() => {
-                    setSearchInput("");
-                    setSearchQuery("");
-                    setAppliedOwnerOnly(false);
-                    setAppliedDueFilter("all");
-                  }}
-                  className="mt-4 text-sm text-[var(--color-primary)] hover:underline"
-                >
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">
-                <p className="max-w-md text-left text-[var(--color-text-secondary)]">
-                  You don't have any projects yet. Create one to get started.
-                </p>
-                <PrimaryButton
-                  type="button"
-                  className="mt-6"
-                  onClick={openCreate}
-                >
-                  New project
-                </PrimaryButton>
-              </div>
-            )
+            <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+              <p className="text-[var(--color-text-secondary)]">
+                No projects match your current view.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchQuery("");
+                  setAppliedOwnerOnly(false);
+                  setAppliedDueFilter("all");
+                }}
+                className="mt-4 text-sm text-[var(--color-primary)] hover:underline"
+              >
+                Clear all filters
+              </button>
+            </div>
           ) : (
             <div className="space-y-4">
               <ul className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
                 {projects.map((project) => (
                   <li key={project.id} className="w-full">
                     <ProjectCard
-                      className="w-full"
                       project={project}
                       progressPercent={projectProgress(project)}
                       canManage={canManageProject(project)}
@@ -354,44 +307,35 @@ export default function ProjectsPage() {
                   </li>
                 ))}
               </ul>
-
-              {loadingMore ? (
-                <div
-                  className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]"
-                  aria-live="polite"
-                >
-                  <div className="h-1.5 w-full bg-[var(--color-muted)]">
-                    <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[var(--color-primary)]/20 via-[var(--color-primary)] to-[var(--color-secondary)]/30" />
-                  </div>
-                  <div className="px-3 py-2 text-center text-xs font-medium text-[var(--color-text-muted)]">
-                    Loading more projects...
-                  </div>
+              {loadingMore && (
+                <div className="p-4 text-center text-xs text-[var(--color-text-muted)]">
+                  Loading more...
                 </div>
-              ) : null}
-
-              <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
+              )}
+              <div ref={loadMoreRef} className="h-1 w-full" />
             </div>
           )}
         </div>
       </div>
-      {formOpen ? (
+
+      {formOpen && (
         <ProjectFormModal
           mode={formMode}
-          initialProject={formMode === "edit" ? editingProject : null}
+          initialProject={editingProject}
           submitting={formSubmitting}
           onClose={closeForm}
           onSubmit={handleFormSubmit}
         />
-      ) : null}
+      )}
 
-      {deletingProject ? (
+      {deletingProject && (
         <DeleteProjectModal
           project={deletingProject}
           submitting={deleteSubmitting}
-          onCancel={cancelDelete}
+          onCancel={() => setDeletingProject(null)}
           onConfirm={handleConfirmDelete}
         />
-      ) : null}
+      )}
     </div>
   );
 }
