@@ -72,8 +72,29 @@ export default function TaskCard({
     className: statusClass,
     dot: dotClass,
   } = statusConfig[task.status];
+
   const { label: priorityLabel, className: priorityClass } =
     priorityConfig[task.priority];
+
+  function TaskWarnings(d: Date): any {
+    const today = new Date();
+
+    if (d.toDateString() === today.toDateString()) {
+      return (
+        <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-600 border border-red-200">
+          Due Today
+        </span>
+      );
+    } else if (d < today) {
+      return (
+        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-600 border border-red-200">
+          Task Due
+        </span>
+      );
+    } else {
+      return null;
+    }
+  }
 
   return (
     <>
@@ -97,6 +118,11 @@ export default function TaskCard({
                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${priorityClass}`}
                 >
                   {priorityLabel}
+                </span>
+                <span>
+                  {task.dueDate && (
+                    <span> {TaskWarnings(new Date(task.dueDate))}</span>
+                  )}
                 </span>
               </div>
 
@@ -151,7 +177,7 @@ export default function TaskCard({
         {/* Divider */}
         <div className="border-t border-gray-100 my-4" />
 
-        {/* Footer: assignees + due date */}
+        {/* Footer  */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-gray-500 border border-gray-200 bg-gray-50">
             <User size={12} />
