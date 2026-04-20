@@ -134,7 +134,7 @@ export default function KanbanBoard({
   tasks,
   onEdit,
   onDelete,
-  onView,
+
   onStatusChange,
 }: KanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
