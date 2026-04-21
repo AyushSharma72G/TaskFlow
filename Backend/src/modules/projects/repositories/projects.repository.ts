@@ -6,8 +6,17 @@ import { ProjectMember, User } from '@prisma/client';
 import { TaskPriority } from '@prisma/client';
 import type { ProjectDueFilter } from '../dto/projects.dto';
 
+type ProjectUser = {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
 export type ProjectMemberWithUser = ProjectMember & {
-    user: User;
+    user: ProjectUser;
 };
 export type ProjectListItem = {
     id: string;
@@ -225,7 +234,7 @@ export class ProjectsRepository {
 
         return {
             data,
-            nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null,
+            nextCursor: hasMore ? (data[data.length - 1]?.id ?? null) : null,
         };
     }
 
@@ -506,7 +515,16 @@ export class ProjectsRepository {
         return this.prisma.projectMember.findMany({
             where: { projectId },
             include: {
-                user: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        avatarUrl: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    },
+                },
             },
         });
     }
