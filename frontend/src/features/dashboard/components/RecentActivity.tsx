@@ -62,14 +62,8 @@ const RecentActivity = () => {
       {loading && logs.length === 0 ? (
         <Loader />
       ) : logs.length === 0 ? (
-        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)] md:p-10">
-          <p className="text-[var(--color-text-secondary)] font-[var(--font-weight-heading)] text-center pb-3">
-            No activities here
-          </p>
-          <p className="max-w-md text-left text-[var(--color-text-secondary)]">
-            You don't have any activities yet. Create one to get started and
-            begin organizing your work.
-          </p>
+        <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] p-6 text-center text-[var(--color-text-muted)]">
+          No Activity found.
         </div>
       ) : (
         activityLog.map((log: any) => (
