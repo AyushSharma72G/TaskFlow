@@ -19,7 +19,7 @@ const ProgressBar = () => {
       return acc + (project.completedTasks ?? 0);
     }, 0);
   };
-  const progress = Math.round((completedTasks() * 100) / totalTasks());
+  const progress = Math.round((completedTasks() * 100) / totalTasks()) || 0;
 
   const progressBarConstants = [
     {

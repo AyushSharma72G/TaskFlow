@@ -220,6 +220,7 @@ Instructions:
 
             return description;
         } catch (error) {
+            console.log(error);
             throw new InternalServerErrorException({
                 message: 'Failed to generate task description',
             });

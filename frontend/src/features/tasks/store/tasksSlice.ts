@@ -175,11 +175,11 @@ const tasksSlice = createSlice({
 
       // deleteTask
       .addCase(deleteTask.pending, (state) => {
-        state.loading = true;
+        state.taskloading = true;
         state.error = null;
       })
       .addCase(deleteTask.fulfilled, (state, action: PayloadAction<string>) => {
-        state.loading = false;
+        state.taskloading = false;
         state.tasks = state.tasks.filter((task) => task.id !== action.payload);
 
         if (state.selectedTask?.id === action.payload) {
@@ -187,7 +187,7 @@ const tasksSlice = createSlice({
         }
       })
       .addCase(deleteTask.rejected, (state, action) => {
-        state.loading = false;
+        state.taskloading = false;
         state.error = (action.payload as string) || "Something went wrong";
       })
 

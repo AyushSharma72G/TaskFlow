@@ -158,7 +158,10 @@ export class TasksService {
             updateData.assigneeIds = [...new Set(updateTaskDto.assigneeIds)];
         }
 
-        if (updateTaskDto.dueDate !== undefined) {
+        if (
+            updateTaskDto.dueDate !== undefined &&
+            updateTaskDto.dueDate != null
+        ) {
             updateData.dueDate = new Date(updateTaskDto.dueDate);
         }
 
