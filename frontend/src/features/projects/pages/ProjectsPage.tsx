@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, FolderPlus } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import PrimaryButton from "../../../shared/components/buttons/PrimaryButton";
 import Loader from "../../../shared/components/Loader";
@@ -201,6 +201,10 @@ export default function ProjectsPage() {
     }
   };
 
+  const isFiltered = useMemo(() => {
+    return searchQuery !== "" || appliedOwnerOnly || appliedDueFilter !== "all";
+  }, [searchQuery, appliedOwnerOnly, appliedDueFilter]);
+
   if (loading && projects.length === 0 && !error) return <Loader />;
 
   return (
@@ -276,21 +280,48 @@ export default function ProjectsPage() {
           className={`transition-opacity duration-200 ${loading ? "opacity-50 pointer-events-none" : "opacity-100"}`}
         >
           {projects.length === 0 ? (
-            <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-              <p className="text-[var(--color-text-secondary)]">
-                No projects match your current view.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchInput("");
-                  setSearchQuery("");
-                  setAppliedOwnerOnly(false);
-                  setAppliedDueFilter("all");
-                }}
-                className="mt-4 text-sm text-[var(--color-primary)] hover:underline"
-              >
-                Clear all filters
-              </button>
+            <div className="flex flex-col items-center justify-center rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center">
+              {!isFiltered ? (
+                <>
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-[var(--color-primary)]">
+                    <FolderPlus size={32} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                    No projects created yet
+                  </h3>
+                  <p className="mt-1 max-w-xs text-[var(--color-text-secondary)]">
+                    Get started by creating your first project to organize your
+                    tasks.
+                  </p>
+                  <PrimaryButton
+                    type="button"
+                    onClick={openCreate}
+                    icon={<Plus className="h-4 w-4" />}
+                    className="mt-6"
+                  >
+                    Create Your First Project
+                  </PrimaryButton>
+                </>
+              ) : (
+                <>
+                  <p className="text-[var(--color-text-secondary)]">
+                    No projects match your current filters or search query.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearchQuery("");
+                      setAppliedOwnerOnly(false);
+                      setAppliedDueFilter("all");
+                      setDraftOwnerOnly(false);
+                      setDraftDueFilter("all");
+                    }}
+                    className="mt-4 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
